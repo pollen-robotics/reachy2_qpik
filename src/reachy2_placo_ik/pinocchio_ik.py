@@ -1,21 +1,24 @@
-"""Reachy2 Pinocchio IK class"""
+"""Reachy2 Pinocchio Inverse Kinematics class."""
 
 import os
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 from numpy.linalg import norm, solve
-from scipy.spatial.transform import Rotation as R
 
 
 class PinocchioIK:
+    """Pinocchio IK class for Reachy2."""
+
     def __init__(
         self,
         urdf_path: str,
         arm: str = "r_arm",
-        locked_joints: list[str] = None,
+        locked_joints: Optional[list[str]] = None,
     ) -> None:
+        """Initialize the class."""
         robot = pin.RobotWrapper.BuildFromURDF(urdf_path, os.path.dirname(urdf_path))
 
         if locked_joints is None:
@@ -32,13 +35,12 @@ class PinocchioIK:
         self.joint_id = self.model.frames[self.ee_frame_id].parent
 
         self.eps = 1e-4  # Error precision
-        self.IT_MAX = 1000  # Maximum number of iteration
         self.DT = 5e-1  # Time step
-        self.damp = 1e-12  # Damping factor
-        self.v_max = 7e-1  # Maximum velocity update
+        self.damp = 4.5e-3  # Damping factor
+        self.IT_MAX = 1
 
     def default_locked_joints(self, arm: str) -> list[str]:
-        """List of the default joints to lock before computation"""
+        """List of the default joints to lock before computation."""
         shared_joints = [
             "tripod_joint",
             "l_hand_finger",
@@ -89,14 +91,21 @@ class PinocchioIK:
         else:
             return shared_joints
 
-    def inverse_kinematics(self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]) -> tuple:
-        """Get the joints from the Inverse Kinematics"""
+    def inverse_kinematics(
+        self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
+    ) -> tuple[npt.NDArray[np.float64], bool, str]:
+        """Get the joints from the Inverse Kinematics."""
         R_goal = goal_pose[:3, :3]
         p_goal = goal_pose[:3, 3]
-        oMdes_base = pin.SE3(R_goal, p_goal)
+        oMdes_torso = pin.SE3(R_goal, p_goal)
 
-        T_baselink_torso = pin.SE3(np.eye(3), np.array([0.010, 0.000, -0.996]))
-        oMdes = T_baselink_torso.inverse() * oMdes_base
+        q_neutral = pin.neutral(self.model)
+        pin.forwardKinematics(self.model, self.data, q_neutral)
+        pin.updateFramePlacements(self.model, self.data)
+
+        T_baselink_torso = self.data.oMf[self.model.getFrameId("torso")].copy()
+
+        oMdes = T_baselink_torso * oMdes_torso
 
         if current_joints is None:
             q = pin.neutral(self.model)
@@ -105,36 +114,49 @@ class PinocchioIK:
 
         success = False
         state = ""
-        i = 0
 
+        i = 0
         while i < self.IT_MAX:
             pin.forwardKinematics(self.model, self.data, q)
+            pin.updateFramePlacements(self.model, self.data)
             iMd = self.data.oMi[self.joint_id].actInv(oMdes)
             err = pin.log(iMd).vector
 
             if norm(err) < self.eps:
                 success = True
-                state = f"Convergence reached in {i} iterations."
+                state = "Convergence reached."
                 break
 
-            # Closed-Loop Inverse Kinematics
-            J = pin.computeJointJacobian(self.model, self.data, q, self.joint_id)
+            J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
             J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
-            v = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))
-            v = np.clip(v, -self.v_max, self.v_max)
+            # Velocity test
+            # dq = np.zeros(7)
+            # dq[6] = 1.0
 
+            # twist = J.dot(dq)
+            # v, w = twist[:3], twist[3:]
+
+            # print(f"  Linear part   v = {v}")
+            # print(f"  Angular part  ω = {w}\n")
+            # print(f"  |v| = {norm(v):.5f},  |ω| = {norm(w):.5f}\n")
+
+            # print(J)
+
+            # Closed-Loop Inverse Kinematics
+            v = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))
             q = pin.integrate(self.model, q, v * self.DT)
 
-            # Newton-Raphson
-            # dq = np.dot(np.linalg.pinv(J), err)
-            # dq = np.clip(dq, -self.v_max, self.v_max)
-
-            # q = pin.integrate(self.model, q, -dq*self.DT)
+            if not success:
+                state = "Convergence not reached."
 
             i += 1
 
-        if not success:
-            state = "Convergence not reached with maximum iterations."
+        # Forward Kinematics obtained by Pinocchio
+        # print(self.arm)
+        # pin.forwardKinematics(self.model, self.data, q)
+        # pin.updateFramePlacements(self.model, self.data)
+        # final_ee_pose = T_baselink_torso.inverse() * self.data.oMf[self.ee_frame_id]
+        # print(final_ee_pose)
 
-        return q, success, state
+        return q, True, state
