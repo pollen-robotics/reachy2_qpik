@@ -80,7 +80,7 @@ def goto_to_point_A(reachy: ReachySDK, arm: str) -> None:
         reachy: An instance of the ReachySDK used to control the robot.
         arm: An arm between left arm ("l_arm") or right ("r_arm")
     """
-    rotation = R.from_euler("xyz", [0, -90 - 45, 0], degrees=True).as_matrix()
+    rotation = R.from_euler("xyz", [0, -90, 0], degrees=True).as_matrix()
     position = np.array([0.38, -0.2, -0.28])
     print(arm)
 
@@ -136,7 +136,7 @@ def goto_to_point_C(reachy: ReachySDK, arm: str) -> None:
         reachy: An instance of the ReachySDK used to control the robot.
         arm: An arm between left arm ("l_arm") or right ("r_arm")
     """
-    rotation = R.from_euler("xyz", [0, -180 - 45, 0], degrees=True).as_matrix()
+    rotation = R.from_euler("xyz", [0, -180, 0], degrees=True).as_matrix()
     position = np.array([9.98901949e-03, -2.56649267e-01, 6.57488464e-01])
     print(arm)
     if arm == "l_arm":
