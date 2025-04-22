@@ -119,7 +119,8 @@ class PinocchioIK:
         while i < self.IT_MAX:
             pin.forwardKinematics(self.model, self.data, q)
             pin.updateFramePlacements(self.model, self.data)
-            iMd = self.data.oMi[self.joint_id].actInv(oMdes)
+            current_ee = self.data.oMf[self.ee_frame_id]
+            iMd = current_ee.actInv(oMdes)
             err = pin.log(iMd).vector
 
             if norm(err) < self.eps:
