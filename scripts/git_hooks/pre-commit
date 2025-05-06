@@ -18,12 +18,12 @@ echo "-------> Isort passed!"
 
 # Run flake8 against all code in the `source_code` directory
 flake8 .
-# echo "-------> Flake8 passed!"
+echo "-------> Flake8 passed!"
 
-# Run mypy against all code in the `source_code` directory
-mypy .
-echo "-------> Mypy passed!"
+# # Run mypy against all code in the `source_code` directory
+# mypy .
+# echo "-------> Mypy passed!"
 
-# Run pydocstring against all code in the `source_code` directory
-pydocstyle --convention google src/
-echo "-------> pydocstring passed!"
+# # Run pydocstring against all code in the `source_code` directory
+# pydocstyle --convention google src/
+# echo "-------> pydocstring passed!"

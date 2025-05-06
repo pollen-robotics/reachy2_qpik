@@ -1,18 +1,11 @@
 """Pinocchio IK motion tests."""
-
 import logging
 import time
 
 import numpy as np
 import numpy.typing as npt
-from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
+from metrics import combined_error, euler_error, l2_error, quat_error, rodrigues_error
 from reachy2_sdk import ReachySDK
-from reachy2_sdk_api.arm_pb2 import (
-    ArmCartesianGoal,
-    IKConstrainedMode,
-    IKContinuousMode,
-)
-from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation as R
 
 
@@ -34,124 +27,63 @@ def make_homogenous_matrix_from_rotation_matrix(
     return matrix
 
 
-def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-    """Move Reachy's arm the the specified target pose.
+def goto_to_point(
+    reachy: ReachySDK,
+    arm: str,
+    euler_angles: list[float],
+    base_position: np.ndarray,
+    degrees: bool = True,
+    duration: float = 2.0,
+) -> None:
+    """This function commands Reachy's right arm to move to the specified target position."""
+    rotation = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
+    position = base_position.copy()
 
-    Args:
-        reachy: An instance of the ReachySDK to control the robot.
-        pose: A 4x4 NumPy array representing the pose matrix.
-        arm: An arm between left ("l_arm") or right ("r_arm").
-    """
-    if arm == "r_arm":
-        request = ArmCartesianGoal(
-            id=reachy.r_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
+    target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
+
+    if arm == "l_arm":
+        # position[1] = -position[1]
+        target_pose_l = np.array(
+            [
+                [target_pose[0][0], -target_pose[0][1], target_pose[0][2], target_pose[0][3]],
+                [-target_pose[1][0], target_pose[1][1], -target_pose[1][2], -target_pose[1][3]],
+                [target_pose[2][0], -target_pose[2][1], target_pose[2][2], target_pose[2][3]],
+                [0, 0, 0, 1],
+            ]
         )
-        reachy.r_arm._stub.SendArmCartesianGoal(request)
 
-    elif arm == "l_arm":
-        request = ArmCartesianGoal(
-            id=reachy.l_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
-        )
-        reachy.l_arm._stub.SendArmCartesianGoal(request)
+        target_pose = target_pose_l
 
+    arm_ref = getattr(reachy, arm)
+    start = time.time()
+    arm_ref.goto(target_pose, interpolation_space="cartesian_space", duration=duration, wait=True)
+    stop = time.time()
 
-def goto_to_point_A(reachy: ReachySDK, arm: str) -> None:
-    """Move Reachy's arm to a Point in 3D space.
+    actual_pose = arm_ref.forward_kinematics()
+    p_des = target_pose[:3, 3]
+    p = actual_pose[:3, 3]
+    R_des = target_pose[:3, :3]
+    R_curr = actual_pose[:3, :3]
 
-    This function commands Reachy's right arm to move to a specified target position.
+    t = stop - start
+    ep = l2_error(p_des, p)
+    etheta = rodrigues_error(R_des, R_curr)
+    equat = quat_error(R.from_matrix(R_des).as_quat(), R.from_matrix(R_curr).as_quat())
+    euler = euler_error(R_des, R_curr)
+    combined = combined_error(ep, etheta)
 
-    Args:
-        reachy: An instance of the ReachySDK used to control the robot.
-        arm: An arm between left arm ("l_arm") or right ("r_arm")
-    """
-    rotation = R.from_euler("xyz", [0, -90, 0], degrees=True).as_matrix()
-    position = np.array([0.38, -0.2, -0.28])
-    print(arm)
+    print(target_pose)
+    print(actual_pose)
+    print(arm_ref.get_current_positions())
+    print(f"== Metrics for {arm} ==")
+    print(f"Time: {t:5f}s")
+    print(f"L2 error: {ep:5f}")
+    print(f"Rodrigues error: {etheta:5f}")
+    print(f"Quaternion error: {equat:5f}")
+    print(f"Euler error: {euler:5f}")
+    print(f"Combined error: {combined:5f}")
 
-    if arm == "l_arm":
-        position = np.array([0.38, 0.2, -0.28])
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.l_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.l_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.l_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
-    else:
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.r_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.r_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.r_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
-
-
-def goto_to_point_B(reachy: ReachySDK, arm: str) -> None:
-    """Move Reachy's right arm to a Point in 3D space.
-
-    This function commands Reachy's right arm to move to a specified target position.
-
-    Args:
-        reachy: An instance of the ReachySDK used to control the robot.
-        arm: An arm between left arm ("l_arm") or right ("r_arm")
-    """
-    rotation = R.from_euler("xyz", [0, 0, 0], degrees=True).as_matrix()
-    position = np.array([0, -0.2, -0.58])
-    print(arm)
-
-    if arm == "l_arm":
-        position = np.array([0, 0.2, -0.58])
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.l_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.l_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.l_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
-    else:
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.r_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.r_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.r_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
-
-
-def goto_to_point_C(reachy: ReachySDK, arm: str) -> None:
-    """Move Reachy's right arm to a Point in 3D space.
-
-    This function commands Reachy's right arm to move to a specified target position.
-
-    Args:
-        reachy: An instance of the ReachySDK used to control the robot.
-        arm: An arm between left arm ("l_arm") or right ("r_arm")
-    """
-    rotation = R.from_euler("xyz", [0, -180, 0], degrees=True).as_matrix()
-    position = np.array([9.98901949e-03, -2.56649267e-01, 6.57488464e-01])
-    print(arm)
-    if arm == "l_arm":
-        position = np.array([9.98901949e-03, 2.56649267e-01, 6.57488464e-01])
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.l_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.l_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.l_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
-    else:
-        target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
-        reachy.r_arm.goto(target_pose, interpolation_space="cartesian_space", wait=True)
-        print(target_pose)
-        print(reachy.r_arm.forward_kinematics())
-        print(f"Position error {np.linalg.norm(reachy.r_arm.forward_kinematics()[:3, 3] - target_pose[:3, 3]):5f}")
+    print(24 * "=")
 
 
 if __name__ == "__main__":
@@ -174,38 +106,52 @@ if __name__ == "__main__":
 
     input("Press Enter to launch the Test 1:")
     print("Move to the point ()")
-    goto_to_point_B(reachy, "r_arm")
-    goto_to_point_B(reachy, "l_arm")
+    angle = [0, 0, 0]
+    position = np.array([0, -0.2, -0.58])
+    goto_to_point(reachy, "l_arm", angle, position, duration=2)
+    goto_to_point(reachy, "r_arm", angle, position, duration=2)
 
     input("Press Enter to launch the Test 2:")
     print("Move to the point ()")
-    goto_to_point_A(reachy, "r_arm")
-    goto_to_point_A(reachy, "l_arm")
+    angle = [0, -90, 0]
+    position = np.array([0.38, -0.2, -0.28])
+    goto_to_point(reachy, "l_arm", angle, position, duration=2)
+    goto_to_point(reachy, "r_arm", angle, position, duration=2)
 
     input("Press Enter to launch the Test 3:")
     print("Move to the point ()")
-    goto_to_point_C(reachy, "r_arm")
-    goto_to_point_C(reachy, "l_arm")
+    angle = [0, -180, 0]
+    position = np.array([0, -0.26, 0.66])
+    goto_to_point(reachy, "r_arm", angle, position)
+    goto_to_point(reachy, "l_arm", angle, position)
 
     input("Press Enter to launch the Test 4:")
     print("Move to the point ()")
-    goto_to_point_A(reachy, "r_arm")
-    goto_to_point_A(reachy, "l_arm")
+    angle = [0, -90, 0]
+    position = np.array([0.38, -0.2, -0.28])
+    goto_to_point(reachy, "r_arm", angle, position)
+    goto_to_point(reachy, "l_arm", angle, position)
 
     input("Press Enter to launch the Test 5:")
     print("Move to the point ()")
-    goto_to_point_B(reachy, "r_arm")
-    goto_to_point_B(reachy, "l_arm")
+    angle = [0, 0, 0]
+    position = np.array([0, -0.2, -0.58])
+    goto_to_point(reachy, "l_arm", angle, position)
+    goto_to_point(reachy, "r_arm", angle, position)
 
     input("Press Enter to launch the Test 6:")
     print("Move to the point ()")
-    goto_to_point_A(reachy, "r_arm")
-    goto_to_point_A(reachy, "l_arm")
+    angle = [0, -90, 0]
+    position = np.array([0.38, -0.2, -0.28])
+    goto_to_point(reachy, "r_arm", angle, position)
+    goto_to_point(reachy, "l_arm", angle, position)
 
     input("Press Enter to launch the Test 7:")
     print("Move to the point ()")
-    goto_to_point_C(reachy, "r_arm")
-    goto_to_point_C(reachy, "l_arm")
+    angle = [0, -180, 0]
+    position = np.array([0, -0.26, 0.66])
+    goto_to_point(reachy, "l_arm", angle, position)
+    goto_to_point(reachy, "r_arm", angle, position)
 
     input("Press Enter to terminate the program:")
     print("Set to Zero pose ...")
