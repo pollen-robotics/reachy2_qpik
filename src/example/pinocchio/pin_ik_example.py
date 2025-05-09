@@ -10,10 +10,9 @@ from reachy2_placo_ik.pinocchio_ik import PinocchioIK
 def main() -> None:
     """Run the main function."""
     urdf_path = ...
-    urdf_path = r"/home/reachy/dev/reachy_urdf/reachy.urdf"
+    # urdf_path = r"/home/reachy/dev/reachy_urdf/reachy.urdf"
 
     pinik = PinocchioIK(urdf_path=urdf_path, arm="l_arm")
-
     pinik_r = PinocchioIK(urdf_path=urdf_path, arm="r_arm")
 
     rotation_matrix = R.from_euler("xyz", [0, 0, 0], degrees=True).as_matrix()

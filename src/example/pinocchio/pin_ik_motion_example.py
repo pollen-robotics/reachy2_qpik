@@ -42,7 +42,6 @@ def goto_to_point(
     target_pose = make_homogenous_matrix_from_rotation_matrix(rotation, position)
 
     if arm == "l_arm":
-        # position[1] = -position[1]
         target_pose_l = np.array(
             [
                 [target_pose[0][0], -target_pose[0][1], target_pose[0][2], target_pose[0][3]],
@@ -72,17 +71,15 @@ def goto_to_point(
     euler = euler_error(R_des, R_curr)
     combined = combined_error(ep, etheta)
 
-    print(target_pose)
-    print(actual_pose)
-    print(arm_ref.get_current_positions())
+    print(f"Target pose: {target_pose}\n")
+    print(f"Actual pose: {actual_pose}\n")
     print(f"== Metrics for {arm} ==")
     print(f"Time: {t:5f}s")
-    print(f"L2 error: {ep:5f}")
-    print(f"Rodrigues error: {etheta:5f}")
-    print(f"Quaternion error: {equat:5f}")
-    print(f"Euler error: {euler:5f}")
+    print(f"L2 error: {ep:5f} m")
+    print(f"Rodrigues error: {np.rad2deg(etheta):5f}°")
+    print(f"Quaternion error: {np.rad2deg(equat):5f}°")
+    print(f"Euler error: {np.rad2deg(euler):5f}°")
     print(f"Combined error: {combined:5f}")
-
     print(24 * "=")
 
 
@@ -97,65 +94,28 @@ if __name__ == "__main__":
 
     print("Turning on Reachy")
     reachy.turn_on()
-
     time.sleep(0.2)
 
     input("Press Enter to start Tests:")
     print("Set to Elbow 90 pose ...")
     reachy.goto_posture("elbow_90", wait=True)
 
-    input("Press Enter to launch the Test 1:")
-    print("Move to the point ()")
-    angle = [0, 0, 0]
-    position = np.array([0, -0.2, -0.58])
-    goto_to_point(reachy, "l_arm", angle, position, duration=2)
-    goto_to_point(reachy, "r_arm", angle, position, duration=2)
+    configs = {
+        "A": ([0, 0, 0], np.array([0, -0.2, -0.58])),  # Arms down
+        "B": ([0, -90, 0], np.array([0.38, -0.2, -0.28])),  # Elbow 90°
+        "C": ([0, -180, 0], np.array([0, -0.26, 0.66])),  # Arms up
+    }
 
-    input("Press Enter to launch the Test 2:")
-    print("Move to the point ()")
-    angle = [0, -90, 0]
-    position = np.array([0.38, -0.2, -0.28])
-    goto_to_point(reachy, "l_arm", angle, position, duration=2)
-    goto_to_point(reachy, "r_arm", angle, position, duration=2)
+    test_sequence = ["A", "B", "C", "B", "A", "B", "C"]
 
-    input("Press Enter to launch the Test 3:")
-    print("Move to the point ()")
-    angle = [0, -180, 0]
-    position = np.array([0, -0.26, 0.66])
-    goto_to_point(reachy, "r_arm", angle, position)
-    goto_to_point(reachy, "l_arm", angle, position)
-
-    input("Press Enter to launch the Test 4:")
-    print("Move to the point ()")
-    angle = [0, -90, 0]
-    position = np.array([0.38, -0.2, -0.28])
-    goto_to_point(reachy, "r_arm", angle, position)
-    goto_to_point(reachy, "l_arm", angle, position)
-
-    input("Press Enter to launch the Test 5:")
-    print("Move to the point ()")
-    angle = [0, 0, 0]
-    position = np.array([0, -0.2, -0.58])
-    goto_to_point(reachy, "l_arm", angle, position)
-    goto_to_point(reachy, "r_arm", angle, position)
-
-    input("Press Enter to launch the Test 6:")
-    print("Move to the point ()")
-    angle = [0, -90, 0]
-    position = np.array([0.38, -0.2, -0.28])
-    goto_to_point(reachy, "r_arm", angle, position)
-    goto_to_point(reachy, "l_arm", angle, position)
-
-    input("Press Enter to launch the Test 7:")
-    print("Move to the point ()")
-    angle = [0, -180, 0]
-    position = np.array([0, -0.26, 0.66])
-    goto_to_point(reachy, "l_arm", angle, position)
-    goto_to_point(reachy, "r_arm", angle, position)
+    for i, key in enumerate(test_sequence, start=1):
+        angles, position = configs[key]
+        input(f"Press Enter to launch Test {i} ({key}):")
+        print(f"Test {i} — Move to {position.tolist()} [m] with angles {angles} [°]...")
+        goto_to_point(reachy, "l_arm", angles, position, duration=2)
+        goto_to_point(reachy, "r_arm", angles, position, duration=2)
 
     input("Press Enter to terminate the program:")
     print("Set to Zero pose ...")
     reachy.goto_posture("default", wait=True)
     exit("Exiting tests")
-
-    time.sleep(0.2)

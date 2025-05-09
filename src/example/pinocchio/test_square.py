@@ -32,47 +32,19 @@ def make_homogenous_matrix_from_rotation_matrix(
     return matrix
 
 
-# def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-#     """Send a Cartesian goal to the specified arm."""
-#     req = ArmCartesianGoal(
-#         id=getattr(reachy, arm)._part_id,
-#         goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-#         continuous_mode=IKContinuousMode.CONTINUOUS,
-#         constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-#         preferred_theta=FloatValue(value=-4 * np.pi / 6),
-#         d_theta_max=FloatValue(value=0.05),
-#         order_id=Int32Value(value=5),
-#     )
-#     stub = getattr(reachy, arm)._stub
-#     stub.SendArmCartesianGoal(req)
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-    if arm == "r_arm":
-        request = ArmCartesianGoal(
-            id=reachy.r_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
-        )
-        reachy.r_arm._stub.SendArmCartesianGoal(request)
-
-    elif arm == "l_arm":
-        request = ArmCartesianGoal(
-            id=reachy.l_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
-        )
-        reachy.l_arm._stub.SendArmCartesianGoal(request)
+    """Send a Cartesian goal to the specified arm."""
+    req = ArmCartesianGoal(
+        id=getattr(reachy, arm)._part_id,
+        goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+        continuous_mode=IKContinuousMode.CONTINUOUS,
+        constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+        preferred_theta=FloatValue(value=-4 * np.pi / 6),
+        d_theta_max=FloatValue(value=0.05),
+        order_id=Int32Value(value=5),
+    )
+    stub = getattr(reachy, arm)._stub
+    stub.SendArmCartesianGoal(req)
 
 
 def make_line(
@@ -83,7 +55,7 @@ def make_line(
     start_orientation = start_pose[1]
     end_orientation = end_pose[1]
 
-    control_frequency = 120.0
+    control_frequency = 100.0
     dt = 1.0 / control_frequency
     nbr_points = int(duration * control_frequency)
 
@@ -106,12 +78,30 @@ def make_line(
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
         go_to_pose(reachy, l_pose, "l_arm")
 
-        r_real_pose = reachy.r_arm.forward_kinematics()
-        l_real_pose = reachy.l_arm.forward_kinematics()
+        # r_real_pose = reachy.r_arm.forward_kinematics()
+        # l_real_pose = reachy.l_arm.forward_kinematics()
         # compute_metrics(r_pose, l_pose, r_real_pose, l_real_pose)
 
-        print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
+
+
+def make_rectangle(
+    reachy: ReachySDK,
+    A: npt.NDArray[np.float64],
+    B: npt.NDArray[np.float64],
+    C: npt.NDArray[np.float64],
+    D: npt.NDArray[np.float64],
+    duration: float = 2.0,
+    number_of_turns: int = 3,
+) -> None:
+    orientation = [0, -np.pi / 2, 0]
+
+    for _ in range(number_of_turns):
+        make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), duration)
+        make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration)
+        make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), duration)
+        make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), duration)
 
 
 def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
@@ -121,8 +111,8 @@ def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
     r_etheta = rodrigues_error(M_r[:3, :3], r_real_pose[:3, :3])
     l_etheta = rodrigues_error(M_l[:3, :3], l_real_pose[:3, :3])
 
-    r_combined = combined_error(r_ep, r_etheta)
-    l_combined = combined_error(l_ep, l_etheta)
+    l_combined = combined_error(r_ep, r_etheta)
+    r_combined = combined_error(l_ep, l_etheta)
 
     print(f"Right arm - pos error: {r_ep:.4f}, rot error: {r_etheta:.4f}, combined: {r_combined:.4f}")
     print(f"Left arm  - pos error: {l_ep:.4f}, rot error: {l_etheta:.4f}, combined: {l_combined:.4f}")
@@ -140,11 +130,12 @@ def main() -> None:
 
     reachy.turn_on()
 
-    print("Test - Making a line")
-    start_pose = np.array([[0.3, -0.22, -0.60], [0, 0, 0]])
-    end_pose = np.array([[0.3, -0.22, 0.50], [0, -np.pi, 0]])
-    make_line(reachy, start_pose, end_pose)
-    make_line(reachy, end_pose, start_pose)
+    print("Test - Making a square")
+    A = np.array([0.4, -0.4, -0.3])
+    B = np.array([0.4, -0.4, -0.1])
+    C = np.array([0.4, -0.1, -0.1])
+    D = np.array([0.4, -0.1, -0.3])
+    make_rectangle(reachy, A, B, C, D)
 
     time.sleep(2)
 

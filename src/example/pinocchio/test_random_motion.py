@@ -1,8 +1,13 @@
+"""Pinocchio IK motion tests."""
+
+import copy
+import logging
 import time
 
 import numpy as np
+import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import combined_error, l2_error, rodrigues_error, velocity_error
+from metrics import *
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -13,135 +18,223 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 from scipy.spatial.transform import Rotation as R
 
 
-def make_homogenous_matrix_from_rotation_matrix(position: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
-    """Convert a 3x3 rotation matrix + position into a 4x4 homogeneous matrix."""
-    mat = np.eye(4)
-    mat[:3, :3] = rotation_matrix
-    mat[:3, 3] = position
-    return mat
+def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
+    if arm == "r_arm":
+        request = ArmCartesianGoal(
+            id=reachy.r_arm._part_id,
+            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+            preferred_theta=FloatValue(
+                value=-4 * np.pi / 6,
+            ),
+            d_theta_max=FloatValue(value=0.05),
+            order_id=Int32Value(value=5),
+        )
+        reachy.r_arm._stub.SendArmCartesianGoal(request)
+
+    elif arm == "l_arm":
+        request = ArmCartesianGoal(
+            id=reachy.l_arm._part_id,
+            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+            continuous_mode=IKContinuousMode.CONTINUOUS,
+            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+            preferred_theta=FloatValue(
+                value=-4 * np.pi / 6,
+            ),
+            d_theta_max=FloatValue(value=0.05),
+            order_id=Int32Value(value=5),
+        )
+        reachy.l_arm._stub.SendArmCartesianGoal(request)
 
 
-def go_to_pose(reachy: ReachySDK, pose: np.ndarray, arm: str) -> None:
-    """Send a Cartesian goal to the specified arm."""
-    req = ArmCartesianGoal(
-        id=getattr(reachy, arm)._part_id,
-        goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-        continuous_mode=IKContinuousMode.CONTINUOUS,
-        constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-        preferred_theta=FloatValue(value=-4 * np.pi / 6),
-        d_theta_max=FloatValue(value=0.05),
-        order_id=Int32Value(value=5),
-    )
-    stub = getattr(reachy, arm)._stub
-    stub.SendArmCartesianGoal(req)
+def get_homogeneous_matrix_msg_from_euler(
+    position: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0]),  # (x, y, z)
+    euler_angles: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0]),  # (roll, pitch, yaw)
+    degrees: bool = False,
+) -> npt.NDArray[np.float64]:
+    homogeneous_matrix = np.eye(4)
+    homogeneous_matrix[:3, :3] = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
+    homogeneous_matrix[:3, 3] = position
+    return homogeneous_matrix
 
 
-def make_line(
-    reachy: ReachySDK, start_pose: np.ndarray, end_pose: np.ndarray, duration: float = 10.0, control_frequency: float = 100.0
-) -> None:
+def make_homogenous_matrix_from_rotation_matrix(
+    position: npt.NDArray[np.float64], rotation_matrix: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
+    """Convert a 3x3 rotation matrix to a 4x4 homogenous matrix.
+
+    Args:
+        rotation_matrix: The 3x3 NumPy array representing the rotation matrix
+        position: The 1x3 NumPy array representing the position of the end-effector
+
+    Returns:
+        A 4x4 NumPy array representing the pose matrix
     """
-    Move both arms in a straight-line Cartesian path from start_pose to end_pose,
-    while logging error metrics at each step.
+    matrix = np.eye(4)
+    matrix[:3, :3] = rotation_matrix
+    matrix[:3, 3] = position
+    return matrix
 
-    start_pose: [[x,y,z], [roll,pitch,yaw]]
-    end_pose:   [[x,y,z], [roll,pitch,yaw]]
-    duration: seconds
-    control_frequency: Hz
-    """
-    # Unpack positions and orientations
-    p0, ori0 = start_pose
-    p1, ori1 = end_pose
 
-    nbr = int(duration * control_frequency)
-    dt = 1.0 / control_frequency
+def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool = False) -> None:
+    q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # [rad]
+    ik_r = q
+    ik_l = q
+    q0 = [-90.0, -80.0, 0.0, -65.0, 0.0, 0.0, 0.0]  # [rad]
+    q_amps = [90.0, 90.0, 180.0, 65.0, 45.0, 45.0, 30.0]  # [rad]
+    previous_joints = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # [rad]
 
-    # Mirror for left arm
-    p0_l = np.array([p0[0], -p0[1], p0[2]])
-    p1_l = np.array([p1[0], -p1[1], p1[2]])
-    ori0_l = np.array([-ori0[0], ori0[1], -ori0[2]])
-    ori1_l = np.array([-ori1[0], ori1[1], -ori1[2]])
+    start = True
 
-    # Previous transforms for velocity error
-    prev_M_r = None
-    prev_r_real = None
-    prev_M_l = None
-    prev_l_real = None
+    freq_reductor = 0.3
+    freq = [0.3 * freq_reductor, 0.17 * freq_reductor, 0.39 * freq_reductor, 0.18, 0.15, 0.15, 0.15 * freq_reductor]
+    control_frequency = 120  # [Hz]
 
-    for i in range(nbr + 1):
-        t0 = time.time()
-        alpha = i / nbr
+    t_init = time.time()
+    while True:
+        t = time.time()
+        t_sine = t - t_init + 11
+        if not debug_pose:
+            r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t_sine) for i in range(7)]  # [rad]
+        else:
+            # Precision problem
+            r_q = [
+                -41.03096373192293,
+                -37.647921777704,
+                -29.585523143459014,
+                -88.24667866025105,
+                -21.052896284656175,
+                9.808669854062696,
+                -89.89911806297954,
+            ]
 
-        # Interpolate right arm
-        pos_r = p0 + (p1 - p0) * alpha
-        ang_r = ori0 + (ori1 - ori0) * alpha
-        R_r = R.from_euler("xyz", ang_r).as_matrix()
-        M_r = make_homogenous_matrix_from_rotation_matrix(pos_r, R_r)
+        l_q = [r_q[0], -r_q[1], -r_q[2], r_q[3], -r_q[4], r_q[5], -r_q[6]]  # [rad]
+        M_r = reachy.r_arm.forward_kinematics(r_q)
+        M_l = np.array(
+            [
+                [M_r[0][0], -M_r[0][1], M_r[0][2], M_r[0][3]],
+                [-M_r[1][0], M_r[1][1], -M_r[1][2], -M_r[1][3]],
+                [M_r[2][0], -M_r[2][1], M_r[2][2], M_r[2][3]],
+                [0, 0, 0, 1],
+            ]
+        )
+
         go_to_pose(reachy, M_r, "r_arm")
-
-        # Interpolate left arm
-        pos_l = p0_l + (p1_l - p0_l) * alpha
-        ang_l = ori0_l + (ori1_l - ori0_l) * alpha
-        R_l = R.from_euler("xyz", ang_l).as_matrix()
-        M_l = make_homogenous_matrix_from_rotation_matrix(pos_l, R_l)
         go_to_pose(reachy, M_l, "l_arm")
 
-        # Maintain control rate
-        elapsed = time.time() - t0
-        time.sleep(max(dt - elapsed, 0.0))
+        ik_r = r_q
+        ik_l = l_q
 
-        # Read real poses
-        r_real = reachy.r_arm.forward_kinematics()
-        l_real = reachy.l_arm.forward_kinematics()
+        # r_real_pose = reachy.r_arm.forward_kinematics()
+        # l_real_pose = reachy.l_arm.forward_kinematics()
 
-        # --- Compute metrics ---
-        # Position and orientation errors
-        epr = l2_error(M_r[:3, 3], r_real[:3, 3])
-        epl = l2_error(M_l[:3, 3], l_real[:3, 3])
-        err_r = rodrigues_error(M_r[:3, :3], r_real[:3, :3])
-        err_l = rodrigues_error(M_l[:3, :3], l_real[:3, :3])
-        comb_r = combined_error(epr, err_r)
-        comb_l = combined_error(epl, err_l)
-        print(f"Step {i}/{nbr} | PosErr R: {epr:.4f}, RotErr R: {err_r:.4f}, Comb R: {comb_r:.4f}")
-        print(f"           | PosErr L: {epl:.4f}, RotErr L: {err_l:.4f}, Comb L: {comb_l:.4f}")
+        # is_real_pose_correct = check_precision_and_symmetry(
+        #     reachy,
+        #     M_r,
+        #     M_l,
+        #     r_real_pose,
+        #     l_real_pose,
+        #     ik_r,
+        #     ik_l,
+        #     previous_joints,
+        #     start,
+        # )
 
-        # Velocity errors
-        if prev_M_r is not None:
-            v_err_r, _ = velocity_error(prev_M_r[:3, 3], prev_r_real[:3, 3], M_r[:3, 3], r_real[:3, 3], dt)
-            v_err_l, _ = velocity_error(prev_M_l[:3, 3], prev_l_real[:3, 3], M_l[:3, 3], l_real[:3, 3], dt)
-            print(f"           | VelErr R: {v_err_r:.4f}, VelErr L: {v_err_l:.4f}")
+        previous_joints = ik_r
+        start = False
 
-        # Update previous
-        prev_M_r, prev_r_real = M_r.copy(), r_real.copy()
-        prev_M_l, prev_l_real = M_l.copy(), l_real.copy()
-        print("---")
+        # if not is_real_pose_correct:
+        #     break
 
-    print("Completed straight-line motion with metrics.")
+        # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
+        print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        time.sleep(max(0, 1.0 / control_frequency - (time.time() - t)))
+
+
+def check_precision_and_symmetry(
+    reachy: ReachySDK,
+    M_r: npt.NDArray[np.float64],
+    M_l: npt.NDArray[np.float64],
+    r_real_pose: npt.NDArray[np.float64],
+    l_real_pose: npt.NDArray[np.float64],
+    ik_r: list[float],
+    ik_l: list[float],
+    previous_joints: list[float],
+    start: bool,
+) -> bool:
+    is_real_pose_correct = True
+
+    l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
+
+    # calculate l2 distance between r_joints and l_mod
+    l2_dist = np.linalg.norm(ik_r - l_mod)
+    print(f"l2_dist: {l2_dist}")
+
+    l_position_diff = np.linalg.norm(l_real_pose[:3, 3] - M_l[:3, 3])
+    r_position_diff = np.linalg.norm(r_real_pose[:3, 3] - M_r[:3, 3])
+    print(f"l_position_diff: {l_position_diff:.3f} m")
+    print(f"r_position_diff: {r_position_diff:.3f} m")
+
+    r_rodrigues_err = rodrigues_error(M_r[:3, :3], r_real_pose[:3, :3])
+    l_rodrigues_err = rodrigues_error(M_l[:3, :3], l_real_pose[:3, :3])
+    print(f"l_rotation_err: {np.rad2deg(l_rodrigues_err):.4f}°")
+    print(f"r_rotation_err: {np.rad2deg(r_rodrigues_err):.4f}°")
+
+    r_combined_err = combined_error(r_position_diff, r_rodrigues_err)
+    l_combined_err = combined_error(l_position_diff, l_rodrigues_err)
+    print(f"l_combined_err: {l_combined_err:.4f}")
+    print(f"r_combined_err: {r_combined_err:.4f}")
+
+    if not start:
+        if np.allclose(ik_r, previous_joints, atol=40):
+            print("Continuity OK")
+        else:
+            print("Continuity NOT OK!!")
+            print(f"previous_joints {np.round(previous_joints, 3).tolist()}")
+            print(f"ik_r {np.round(ik_r, 3)}")
+            print(f"ik_l {np.round(ik_l, 3)}")
+            print(f"r_real_pose {r_real_pose.tolist()}")
+            print(f"l_real_pose {l_real_pose.tolist()}")
+            is_real_pose_correct = False
+
+    if l2_dist < 0.1:
+        print("Symmetry OK")
+    else:
+        print("Symmetry NOT OK!!")
+        # print(f"initial r_q {r_q}")
+        print(f"ik_r {np.round(ik_r, 3).tolist()}")
+        print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
+        print(f"M_r {M_r.tolist()}")
+        print(f"M_l {M_l.tolist()}")
+        is_real_pose_correct = False
+    print("_____________________")
+    return is_real_pose_correct
 
 
 def main() -> None:
-    print("Connecting to Reachy…")
+    print("Trying to connect on localhost Reachy...")
+    time.sleep(1.0)
     reachy = ReachySDK(host="localhost")
+
     time.sleep(1.0)
     if reachy._grpc_status == "disconnected":
-        print("Failed to connect to Reachy.")
+        print("Failed to connect to Reachy, exiting...")
         return
+
     reachy.turn_on()
+    print("Putting each joint at 0 degrees angle")
+    time.sleep(0.5)
+    for joint in reachy.joints.values():
+        joint.goal_position = 0
+    reachy.send_goal_positions()
+    time.sleep(1.0)
 
-    # Move arms to start posture
-    reachy.r_arm.goto([0, 15, -10, 0, 0, 0, 0], 3.0, degrees=True, interpolation_mode="minimum_jerk")
-    reachy.l_arm.goto([0, -15, 10, 0, 0, 0, 0], 3.0, degrees=True, interpolation_mode="minimum_jerk")
-    time.sleep(5.0)
+    random_trajectory(reachy, debug_pose=False, bypass=False)
 
-    # Define line in Cartesian space
-    start = np.array([0.3, -0.2, -0.6599]), np.array([0.0, 0.0, 0.0])
-    end = np.array([0.3, -0.2, 0.50]), np.array([0.0, -np.pi, 0.0])
-
-    print("Starting straight-line motion with metrics…")
-    make_line(reachy, start, end, duration=10.0, control_frequency=100.0)
-
-    # Return to default posture and shutdown
-    reachy.goto_posture("default", wait=True)
-    reachy.turn_off()
+    print("Finished testing, disconnecting from Reachy...")
+    time.sleep(0.5)
+    reachy.disconnect()
 
 
 if __name__ == "__main__":

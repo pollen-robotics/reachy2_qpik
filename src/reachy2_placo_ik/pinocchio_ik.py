@@ -35,9 +35,9 @@ class PinocchioIK:
         self.ee_frame_id = self.model.getFrameId(self.ee_frame)
         self.joint_id = self.model.frames[self.ee_frame_id].parent
 
-        self.eps = 1e-4  # Error precision
-        self.damp = 4.5e-3  # Damping factor
         self.IT_MAX = 1
+        self.eps = 1e-4  # Error precision (if IT_MAX >1)
+        self.damp = 7.5e-3  # Damping factor
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -91,40 +91,74 @@ class PinocchioIK:
         else:
             return shared_joints
 
+    # def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> tuple[bool, npt.NDArray[np.float64], str]:
+    #     """Reduce the goal pose if it's out of reach and prevent backward tip."""
+
+    #     ik_parameters = {
+    #         "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0]),
+    #         "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0]),
+    #         "max_arm_length": np.float64(0.66),
+    #     }
+    #     goal_pose = copy.deepcopy(goal_pose)
+    #     goal_position = goal_pose[:3, 3]
+    #     d_shoulder_goal = np.linalg.norm(goal_position - ik_parameters[f"{self.arm}_shoulder_position"])
+    #     state = ""
+    #     is_reachable = True
+
+    #     if d_shoulder_goal > ik_parameters["max_arm_length"]:
+    #         is_reachable = False
+    #         direction = goal_position - ik_parameters[f"{self.arm}_shoulder_position"]
+    #         direction = direction / (np.linalg.norm(direction) + 1e-6)
+    #         goal_position = ik_parameters[f"{self.arm}_shoulder_position"] + direction * ik_parameters["max_arm_length"]
+    #         goal_pose[:3, 3] = goal_position
+    #         state = "Pose out of reach"
+
+    #     return is_reachable, goal_pose, state
+
     def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> tuple[bool, npt.NDArray[np.float64], str]:
         """Reduce the goal pose if it's out of reach and prevent backward tip."""
+        goal_pose = copy.deepcopy(goal_pose)
+        goal_position = goal_pose[:3, 3].copy()
 
-        ik_parameters = {
+        ik_params = {
             "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0]),
             "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0]),
-            "max_arm_length": np.float64(0.66),
+            "max_arm_length": np.float64(0.60),
+            "backward_limit": np.float64(0.0),
         }
-        goal_pose = copy.deepcopy(goal_pose)
-        goal_position = goal_pose[:3, 3]
-        d_shoulder_goal = np.linalg.norm(goal_position - ik_parameters[f"{self.arm}_shoulder_position"])
-        state = ""
-        is_reachable = True
 
-        if d_shoulder_goal > ik_parameters["max_arm_length"]:
+        shoulder = ik_params[f"{self.arm}_shoulder_position"]
+        is_reachable = True
+        state = ""
+
+        vec = goal_position - shoulder
+        dist = norm(vec)
+        if dist > ik_params["max_arm_length"]:
             is_reachable = False
-            direction = goal_position - ik_parameters[f"{self.arm}_shoulder_position"]
-            direction = direction / (np.linalg.norm(direction) + 1e-2)
-            goal_position = ik_parameters[f"{self.arm}_shoulder_position"] + direction * ik_parameters["max_arm_length"]
-            goal_pose[:3, 3] = goal_position
+            direction = vec / (dist + 1e-9)
+            goal_position = shoulder + direction * ik_params["max_arm_length"]
             state = "Pose out of reach"
 
+        if goal_position[0] < ik_params["backward_limit"]:
+            is_reachable = False
+            goal_position[0] = ik_params["backward_limit"]
+
+            state = state or "Backward pose"
+
+        goal_pose[:3, 3] = goal_position
         return is_reachable, goal_pose, state
 
     def inverse_kinematics(
         self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64], dt: float = 0.5
     ) -> tuple[npt.NDArray[np.float64], bool, str]:
         """Get the joints from the Inverse Kinematics."""
-        # _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
+        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
         R_goal = goal_pose[:3, :3]
         p_goal = goal_pose[:3, 3]
         oMdes_torso = pin.SE3(R_goal, p_goal)
 
-        q_neutral = pin.neutral(self.model)
+        q_neutral = pin.neutral(self.model)  # [rad]
+
         pin.framesForwardKinematics(self.model, self.data, q_neutral)
         pin.updateFramePlacements(self.model, self.data)
 
@@ -146,7 +180,7 @@ class PinocchioIK:
             pin.updateFramePlacements(self.model, self.data)
             current_ee = self.data.oMf[self.ee_frame_id]
             iMd = current_ee.actInv(oMdes)
-            err = pin.log(iMd).vector
+            err = pin.log(iMd).vector  # [rad]
 
             if norm(err) < self.eps:
                 success = True
@@ -157,8 +191,8 @@ class PinocchioIK:
             J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
             # Closed-Loop Inverse Kinematics
-            v = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))
-            q = pin.integrate(self.model, q, v * dt)
+            q_dot = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))  # [rad.s⁻¹]
+            q = pin.integrate(self.model, q, q_dot * dt)
 
             if not success:
                 state = "Convergence not reached."
@@ -178,12 +212,12 @@ class PinocchioIK:
         self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         """Compute one IK velocity step."""
-        # _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
+        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
         R_goal = goal_pose[:3, :3]
         p_goal = goal_pose[:3, 3]
         oMdes_torso = pin.SE3(R_goal, p_goal)
 
-        q = current_joints.copy()
+        q = current_joints.copy()  # [rad]
         pin.framesForwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
 
@@ -192,11 +226,11 @@ class PinocchioIK:
 
         current_ee = self.data.oMf[self.ee_frame_id]
         iMd = current_ee.actInv(oMdes)
-        err = pin.log(iMd).vector
+        err = pin.log(iMd).vector  # [rad]
 
         J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
         J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
-        v = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))
+        q_dot = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), err))  # [rad.s⁻¹]
 
-        return v
+        return q_dot
