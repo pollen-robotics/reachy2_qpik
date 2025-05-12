@@ -1,3 +1,5 @@
+"""Pinocchio IK Control Loop."""
+
 import threading
 import time
 
@@ -9,10 +11,11 @@ import pinocchio as pin
 class PinocchioControl:
     """Pinocchio Tracking Control for Reachy2."""
 
-    def __init__(self, node, ik_solver, dt: float = 1 / 500):
+    def __init__(self, node, ik_solver, ik_step: float = 0.17, dt: float = 1 / 500):
         """Initialize the class."""
         self.node = node
         self.dt = dt  # [s]
+        self.ik_step = ik_step # [s]
         self.lock = threading.Lock()
 
         self.q_present = {
@@ -78,8 +81,7 @@ class PinocchioControl:
                 target_copy = target.copy()
 
                 q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
-                q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * 0.17)  # [rad]
-                # q_updated = q_current + q_dot * self.dt  # [rad]
+                q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
                 with self.lock:
                     self.q_present[arm] = q_updated
@@ -90,14 +92,14 @@ class PinocchioControl:
 
             if time.time() - start_time >= 1.0:
                 freq = loop_count / (time.time() - start_time)
-                print(f"Frequency: {freq:.2f} Hz")
+                # print(f"Frequency: {freq:.2f} Hz")
                 loop_count = 0
                 start_time = time.time()
 
     def tick_control(
         self, arm: str, q_current: npt.NDArray[np.float64], target_pose: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
-        """Updates the joint velocities at each tick."""
+        """Update the joint velocities at each tick."""
         try:
             q_dot = self.ik_solver[arm].compute_velocity(target_pose, q_current)
 

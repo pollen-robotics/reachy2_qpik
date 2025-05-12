@@ -1,3 +1,5 @@
+"""Pinocchio IK line motion test."""
+
 import time
 
 import numpy as np
@@ -32,47 +34,19 @@ def make_homogenous_matrix_from_rotation_matrix(
     return matrix
 
 
-# def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-#     """Send a Cartesian goal to the specified arm."""
-#     req = ArmCartesianGoal(
-#         id=getattr(reachy, arm)._part_id,
-#         goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-#         continuous_mode=IKContinuousMode.CONTINUOUS,
-#         constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-#         preferred_theta=FloatValue(value=-4 * np.pi / 6),
-#         d_theta_max=FloatValue(value=0.05),
-#         order_id=Int32Value(value=5),
-#     )
-#     stub = getattr(reachy, arm)._stub
-#     stub.SendArmCartesianGoal(req)
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-    if arm == "r_arm":
-        request = ArmCartesianGoal(
-            id=reachy.r_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
-        )
-        reachy.r_arm._stub.SendArmCartesianGoal(request)
-
-    elif arm == "l_arm":
-        request = ArmCartesianGoal(
-            id=reachy.l_arm._part_id,
-            goal_pose=Matrix4x4(data=pose.flatten().tolist()),
-            continuous_mode=IKContinuousMode.CONTINUOUS,
-            constrained_mode=IKConstrainedMode.UNCONSTRAINED,
-            preferred_theta=FloatValue(
-                value=-4 * np.pi / 6,
-            ),
-            d_theta_max=FloatValue(value=0.05),
-            order_id=Int32Value(value=5),
-        )
-        reachy.l_arm._stub.SendArmCartesianGoal(request)
+    """Send a Cartesian goal to the specified arm."""
+    req = ArmCartesianGoal(
+        id=getattr(reachy, arm)._part_id,
+        goal_pose=Matrix4x4(data=pose.flatten().tolist()),
+        continuous_mode=IKContinuousMode.CONTINUOUS,
+        constrained_mode=IKConstrainedMode.UNCONSTRAINED,
+        preferred_theta=FloatValue(value=-4 * np.pi / 6),
+        d_theta_max=FloatValue(value=0.05),
+        order_id=Int32Value(value=5),
+    )
+    stub = getattr(reachy, arm)._stub
+    stub.SendArmCartesianGoal(req)
 
 
 def make_line(
@@ -98,19 +72,25 @@ def make_line(
         orientation = start_orientation + (end_orientation - start_orientation) * (i / nbr_points)
         rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
         r_pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
+        # t1 = time.time()
         go_to_pose(reachy, r_pose, "r_arm")
+        # t2 = time.time()
 
         l_position = l_start_position + (l_end_position - l_start_position) * (i / nbr_points)
         l_orientation = l_start_orientation + (l_end_orientation - l_start_orientation) * (i / nbr_points)
         l_rotation_matrix = R.from_euler("xyz", l_orientation).as_matrix()
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
+        # t3 = time.time()
         go_to_pose(reachy, l_pose, "l_arm")
+        # t4 = time.time()
 
-        r_real_pose = reachy.r_arm.forward_kinematics()
-        l_real_pose = reachy.l_arm.forward_kinematics()
+        # r_real_pose = reachy.r_arm.forward_kinematics()
+        # l_real_pose = reachy.l_arm.forward_kinematics()
         # compute_metrics(r_pose, l_pose, r_real_pose, l_real_pose)
 
-        print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        # print(f"Right arm: {1000*(t2-t1)} ms")
+        # print(f"Left arm: {1000*(t4-t3)} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
 
 

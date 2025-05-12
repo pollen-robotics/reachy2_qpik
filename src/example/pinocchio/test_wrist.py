@@ -1,3 +1,5 @@
+"""Pinocchio IK wrist motion test."""
+
 import time
 
 import numpy as np

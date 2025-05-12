@@ -1,3 +1,5 @@
+"""Pinocchio IK circle motion test."""
+
 import time
 
 import numpy as np
@@ -118,8 +120,8 @@ def make_circle(
             l_rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
             l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
             go_to_pose(reachy, l_pose, "l_arm")
-            time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
             # print((time.time() - t)*1000)
+            time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
 
 
 def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
@@ -151,7 +153,7 @@ def main() -> None:
     print("Test - Making a circle")
     center = np.array([0.4, -0.4, -0.2])
     orientation = np.array([0, -np.pi / 2, 0])
-    radius = 0.25
+    radius = 0.2
     make_circle(reachy, center, orientation, radius)
 
     time.sleep(2)

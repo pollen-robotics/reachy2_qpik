@@ -1,4 +1,5 @@
 """Pinocchio IK motion tests."""
+
 import logging
 import time
 

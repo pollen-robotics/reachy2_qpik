@@ -1,7 +1,5 @@
-"""Pinocchio IK motion tests."""
+"""Pinocchio IK random motion test."""
 
-import copy
-import logging
 import time
 
 import numpy as np
@@ -126,20 +124,20 @@ def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
         ik_r = r_q
         ik_l = l_q
 
-        # r_real_pose = reachy.r_arm.forward_kinematics()
-        # l_real_pose = reachy.l_arm.forward_kinematics()
+        r_real_pose = reachy.r_arm.forward_kinematics()
+        l_real_pose = reachy.l_arm.forward_kinematics()
 
-        # is_real_pose_correct = check_precision_and_symmetry(
-        #     reachy,
-        #     M_r,
-        #     M_l,
-        #     r_real_pose,
-        #     l_real_pose,
-        #     ik_r,
-        #     ik_l,
-        #     previous_joints,
-        #     start,
-        # )
+        is_real_pose_correct = check_precision_and_symmetry(
+            reachy,
+            M_r,
+            M_l,
+            r_real_pose,
+            l_real_pose,
+            ik_r,
+            ik_l,
+            previous_joints,
+            start,
+        )
 
         previous_joints = ik_r
         start = False
@@ -148,7 +146,7 @@ def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
         #     break
 
         # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
-        print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
         time.sleep(max(0, 1.0 / control_frequency - (time.time() - t)))
 
 
@@ -191,7 +189,7 @@ def check_precision_and_symmetry(
             print("Continuity OK")
         else:
             print("Continuity NOT OK!!")
-            print(f"previous_joints {np.round(previous_joints, 3).tolist()}")
+            print(f"previous_joints {np.rosd(previous_joints, 3).tolist()}")
             print(f"ik_r {np.round(ik_r, 3)}")
             print(f"ik_l {np.round(ik_l, 3)}")
             print(f"r_real_pose {r_real_pose.tolist()}")
