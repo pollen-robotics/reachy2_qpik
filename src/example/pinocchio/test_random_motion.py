@@ -5,7 +5,7 @@ import time
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import *
+from metrics import l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -142,8 +142,8 @@ def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
         previous_joints = ik_r
         start = False
 
-        # if not is_real_pose_correct:
-        #     break
+        if not is_real_pose_correct:
+            break
 
         # print(f"ik_r: {ik_r}, ik_l: {ik_l}, time_r: {t1-t0}, time_l: {t2-t1}")
         # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
@@ -166,11 +166,11 @@ def check_precision_and_symmetry(
     l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
 
     # calculate l2 distance between r_joints and l_mod
-    l2_dist = np.linalg.norm(ik_r - l_mod)
+    l2_dist = l2_error(ik_r, l_mod)
     print(f"l2_dist: {l2_dist}")
 
-    l_position_diff = np.linalg.norm(l_real_pose[:3, 3] - M_l[:3, 3])
-    r_position_diff = np.linalg.norm(r_real_pose[:3, 3] - M_r[:3, 3])
+    l_position_diff = l2_error(l_real_pose[:3, 3], M_l[:3, 3])
+    r_position_diff = l2_error(r_real_pose[:3, 3], M_r[:3, 3])
     print(f"l_position_diff: {l_position_diff:.3f} m")
     print(f"r_position_diff: {r_position_diff:.3f} m")
 
@@ -179,17 +179,12 @@ def check_precision_and_symmetry(
     print(f"l_rotation_err: {np.rad2deg(l_rodrigues_err):.4f}°")
     print(f"r_rotation_err: {np.rad2deg(r_rodrigues_err):.4f}°")
 
-    r_combined_err = combined_error(r_position_diff, r_rodrigues_err)
-    l_combined_err = combined_error(l_position_diff, l_rodrigues_err)
-    print(f"l_combined_err: {l_combined_err:.4f}")
-    print(f"r_combined_err: {r_combined_err:.4f}")
-
     if not start:
         if np.allclose(ik_r, previous_joints, atol=40):
             print("Continuity OK")
         else:
             print("Continuity NOT OK!!")
-            print(f"previous_joints {np.rosd(previous_joints, 3).tolist()}")
+            print(f"previous_joints {np.round(previous_joints, 3).tolist()}")
             print(f"ik_r {np.round(ik_r, 3)}")
             print(f"ik_l {np.round(ik_l, 3)}")
             print(f"r_real_pose {r_real_pose.tolist()}")

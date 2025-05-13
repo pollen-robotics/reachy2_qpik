@@ -2,6 +2,7 @@
 
 import threading
 import time
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -15,7 +16,7 @@ class PinocchioControl:
         """Initialize the class."""
         self.node = node
         self.dt = dt  # [s]
-        self.ik_step = ik_step # [s]
+        self.ik_step = ik_step  # [s]
         self.lock = threading.Lock()
 
         self.q_present = {
@@ -23,7 +24,7 @@ class PinocchioControl:
             "r_arm": np.zeros(7),  # [rad]
         }
 
-        self.target_pose = {
+        self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
             "l_arm": None,
             "r_arm": None,
         }
@@ -33,7 +34,7 @@ class PinocchioControl:
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
 
-    def _update_joints(self, current_pos: npt.NDArray[np.float64]):
+    def _update_joints(self, current_pos: dict[str, float]):
         """Updates the joints values."""
         r_arm_joints = [
             "r_shoulder_pitch",
@@ -63,7 +64,6 @@ class PinocchioControl:
 
     def _control_loop(self):
         """Control Loop for pose tracking."""
-
         start_time = 0
         loop_count = 0
 
@@ -91,7 +91,7 @@ class PinocchioControl:
             time.sleep(max(self.dt - (time.time() - t), 0.0))
 
             if time.time() - start_time >= 1.0:
-                freq = loop_count / (time.time() - start_time)
+                # freq = loop_count / (time.time() - start_time)
                 # print(f"Frequency: {freq:.2f} Hz")
                 loop_count = 0
                 start_time = time.time()
@@ -109,11 +109,11 @@ class PinocchioControl:
         return q_dot
 
     def set_current_goal(self, arm: str, pose: np.ndarray):
-        """Setter method for the current target pose"""
+        """Setter method for the current target pose."""
         with self.lock:
             self.target_pose[arm] = pose
 
-    def get_current_goal(self, arm: str) -> npt.NDArray[np.float64]:
+    def get_current_goal(self, arm: str) -> Optional[npt.NDArray[np.float64]]:
         """Getter method for the current target pose."""
         with self.lock:
             target = self.target_pose[arm]

@@ -5,7 +5,7 @@ import time
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import *
+from metrics import l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -41,14 +41,12 @@ def random_walk_test(
     Perform a random walk.
     """
 
-    metrics = {
+    metrics: dict = {
         "l2_dist": [],
         "r_pos_err": [],
         "l_pos_err": [],
         "r_rot_err": [],
         "l_rot_err": [],
-        "r_comb_err": [],
-        "l_comb_err": [],
     }
 
     q0 = np.random.uniform(low=-np.pi / 2, high=np.pi / 2, size=7)
@@ -86,26 +84,20 @@ def random_walk_test(
         r_real = np.array(reachy.r_arm.forward_kinematics())
         l_real = np.array(reachy.l_arm.forward_kinematics())
 
-        l2 = np.linalg.norm(r_real[:3, 3] - l_real[:3, 3]) 
-        r_pos = np.linalg.norm(r_real[:3, 3] - M_target_r[:3, 3])
-        l_pos = np.linalg.norm(l_real[:3, 3] - M_target_l[:3, 3])
+        l2 = l2_error(r_real[:3, 3], l_real[:3, 3])
+        r_pos = l2_error(r_real[:3, 3], M_target_r[:3, 3])
+        l_pos = l2_error(l_real[:3, 3], M_target_l[:3, 3])
         r_rot = rodrigues_error(M_target_r[:3, :3], r_real[:3, :3])
         l_rot = rodrigues_error(M_target_l[:3, :3], l_real[:3, :3])
-        r_comb = combined_error(r_pos, r_rot)
-        l_comb = combined_error(l_pos, l_rot)
 
         metrics["l2_dist"].append(l2)
         metrics["r_pos_err"].append(r_pos)
         metrics["l_pos_err"].append(l_pos)
         metrics["r_rot_err"].append(r_rot)
         metrics["l_rot_err"].append(l_rot)
-        metrics["r_comb_err"].append(r_comb)
-        metrics["l_comb_err"].append(l_comb)
-
         M_prev_r = M_target_r
 
         time.sleep(max(dt - (time.time() - t), 0.0))
-
 
     stats = {}
     for key, vals in metrics.items():

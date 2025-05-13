@@ -118,31 +118,33 @@ class PinocchioIK:
     def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> tuple[bool, npt.NDArray[np.float64], str]:
         """Reduce the goal pose if it's out of reach and prevent backward tip."""
         goal_pose = copy.deepcopy(goal_pose)
-        goal_position = goal_pose[:3, 3].copy()
+        goal_position: npt.NDArray[np.float64] = np.array(goal_pose[:3, 3], dtype=np.float64)
 
-        ik_params = {
-            "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0]),
-            "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0]),
-            "max_arm_length": np.float64(0.60),
-            "backward_limit": np.float64(0.0),
+        ik_params: dict = {
+            "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0], dtype=np.float64),
+            "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0], dtype=np.float64),
+            "max_arm_length": 0.60,
+            "backward_limit": 0.0,
         }
 
-        shoulder = ik_params[f"{self.arm}_shoulder_position"]
-        is_reachable = True
-        state = ""
+        shoulder: npt.NDArray[np.float64] = ik_params[f"{self.arm}_shoulder_position"]
+        max_arm_length: float = float(ik_params["max_arm_length"])
+        backward_limit: float = float(ik_params["backward_limit"])
+
+        is_reachable: bool = True
+        state: str = ""
 
         vec = goal_position - shoulder
         dist = norm(vec)
-        if dist > ik_params["max_arm_length"]:
+        if dist > max_arm_length:
             is_reachable = False
             direction = vec / (dist + 1e-9)
-            goal_position = shoulder + direction * ik_params["max_arm_length"]
+            goal_position = shoulder + direction * max_arm_length
             state = "Pose out of reach"
 
-        if goal_position[0] < ik_params["backward_limit"]:
+        if goal_position[0] < backward_limit:
             is_reachable = False
-            goal_position[0] = ik_params["backward_limit"]
-
+            goal_position[0] = backward_limit
             state = state or "Backward pose"
 
         goal_pose[:3, 3] = goal_position

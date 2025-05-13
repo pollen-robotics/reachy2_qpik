@@ -50,7 +50,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: np.ndarray[np.float64], duration: float = 4.0
+    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 4.0
 ) -> None:
     start_position = start_pose[0]
     end_position = end_pose[0]

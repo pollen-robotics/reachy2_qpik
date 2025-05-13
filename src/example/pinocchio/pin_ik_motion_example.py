@@ -2,6 +2,7 @@
 
 import logging
 import time
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -31,7 +32,7 @@ def make_homogenous_matrix_from_rotation_matrix(
 def goto_to_point(
     reachy: ReachySDK,
     arm: str,
-    euler_angles: list[float],
+    euler_angles: Sequence[float],
     base_position: np.ndarray,
     degrees: bool = True,
     duration: float = 2.0,
