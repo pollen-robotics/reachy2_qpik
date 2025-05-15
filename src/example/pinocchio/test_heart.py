@@ -177,6 +177,6 @@ if __name__ == "__main__":
     time.sleep(0.5)
 
     print("Test - Making heart")
-    draw_heart(reachy)
+    draw_heart(reachy, collect_data=False)
 
     reachy.turn_off()
