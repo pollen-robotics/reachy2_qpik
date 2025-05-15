@@ -5,7 +5,7 @@ import time
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import l2_error, rodrigues_error
+from metrics import combined_error, l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -179,6 +179,11 @@ def check_precision_and_symmetry(
     print(f"l_rotation_err: {np.rad2deg(l_rodrigues_err):.4f}°")
     print(f"r_rotation_err: {np.rad2deg(r_rodrigues_err):.4f}°")
 
+    r_combined_err = combined_error(r_position_diff, r_rodrigues_err)
+    l_combined_err = combined_error(l_position_diff, l_rodrigues_err)
+    print(f"l_combined_err: {l_combined_err:.4f}")
+    print(f"r_combined_err: {r_combined_err:.4f}")
+
     if not start:
         if np.allclose(ik_r, previous_joints, atol=40):
             print("Continuity OK")
@@ -195,7 +200,6 @@ def check_precision_and_symmetry(
         print("Symmetry OK")
     else:
         print("Symmetry NOT OK!!")
-        # print(f"initial r_q {r_q}")
         print(f"ik_r {np.round(ik_r, 3).tolist()}")
         print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
         print(f"M_r {M_r.tolist()}")

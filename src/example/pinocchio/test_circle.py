@@ -1,11 +1,12 @@
 """Pinocchio IK circle motion test."""
 
+import csv
+import os
 import time
 
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import combined_error, l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -93,10 +94,11 @@ def make_circle(
     center: npt.NDArray[np.float64],
     orientation: npt.NDArray[np.float64],
     radius: float,
-    duration: float = 10.0,
-    number_of_turns: int = 7,
+    duration: float = 4.0,
+    number_of_turns: int = 4,
+    collect_data: bool = False,
 ) -> None:
-    control_frequency = 100.0
+    control_frequency = 120.0
     nbr_points = int(duration * control_frequency)
 
     Y_r = center[1] + radius * np.cos(np.linspace(0, 2 * np.pi, nbr_points))
@@ -108,35 +110,93 @@ def make_circle(
     Y_r = Y_r[::-1]
     Z = Z[::-1]
 
-    for _ in range(number_of_turns):
-        for i in range(nbr_points):
-            t = time.time()
-            position = np.array([X[i], Y_r[i], Z[i]])
-            rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
-            pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
-            go_to_pose(reachy, pose, "r_arm")
+    dt = 1 / control_frequency
 
-            l_position = np.array([X[i], Y_l[i], Z[i]])
+    if collect_data:
+        input("collect_data is set to True. Press Entrer to continue if you are sure with the parameters:")
+        data_lst = []
+
+    for i in range(number_of_turns):
+        for j in range(nbr_points):
+            t = time.time()
+            position = np.array([X[j], Y_r[j], Z[j]])
+            rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
+            r_pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
+            go_to_pose(reachy, r_pose, "r_arm")
+
+            l_position = np.array([X[j], Y_l[j], Z[j]])
             l_rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
             l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
             go_to_pose(reachy, l_pose, "l_arm")
             # print((time.time() - t)*1000)
-            time.sleep(max(1.0 / control_frequency - (time.time() - t), 0.0))
+
+            if collect_data:
+                time.sleep(0.05)
+
+                r_real_pose = reachy.r_arm.forward_kinematics()
+                l_real_pose = reachy.l_arm.forward_kinematics()
+
+                l_joints = reachy.l_arm.get_current_positions()
+                r_joints = reachy.r_arm.get_current_positions()
+
+                data = [(i * nbr_points + j) * dt, l_joints, l_pose, l_real_pose, r_joints, r_pose, r_real_pose]
+                data_lst.append(data)
+
+            time.sleep(max(dt - (time.time() - t), 0.0))
+
+    if collect_data:
+        save_data_to_csv(data_lst, filename="num_circle_data.csv")
 
 
-def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
-    r_ep = l2_error(M_r[:3, 3], r_real_pose[:3, 3])
-    l_ep = l2_error(M_l[:3, 3], l_real_pose[:3, 3])
+def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
+    """Save collected data to a CSV file."""
+    os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, filename)
 
-    r_etheta = rodrigues_error(M_r[:3, :3], r_real_pose[:3, :3])
-    l_etheta = rodrigues_error(M_l[:3, :3], l_real_pose[:3, :3])
+    header = [
+        "time",
+        "l_q0",
+        "l_q1",
+        "l_q2",
+        "l_q3",
+        "l_q4",
+        "l_q5",
+        "l_q6",
+        "r_q0",
+        "r_q1",
+        "r_q2",
+        "r_q3",
+        "r_q4",
+        "r_q5",
+        "r_q6",
+        "l_pose",
+        "l_real_pose",
+        "r_pose",
+        "r_real_pose",
+    ]
 
-    l_combined = combined_error(r_ep, r_etheta)
-    r_combined = combined_error(l_ep, l_etheta)
+    with open(filepath, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
 
-    print(f"Right arm - pos error: {r_ep:.4f}, rot error: {r_etheta:.4f}, combined: {r_combined:.4f}")
-    print(f"Left arm  - pos error: {l_ep:.4f}, rot error: {l_etheta:.4f}, combined: {l_combined:.4f}")
-    print("_" * 20)
+        for data in data_lst:
+            time_val = data[0]
+            l_joints = data[1]
+            l_pose = data[2]
+            l_real_pose = data[3]
+            r_joints = data[4]
+            r_pose = data[5]
+            r_real_pose = data[6]
+
+            row = (
+                [time_val]
+                + l_joints
+                + r_joints
+                + [l_pose.tolist(), l_real_pose.tolist(), r_pose.tolist(), r_real_pose.tolist()]
+            )
+
+            writer.writerow(row)
+    print(f"Data was succesfully saved to {filepath}")
 
 
 def main() -> None:
@@ -151,9 +211,18 @@ def main() -> None:
     reachy.turn_on()
 
     print("Test - Making a circle")
+
+    radius = 0.15
     center = np.array([0.4, -0.4, -0.2])
     orientation = np.array([0, -np.pi / 2, 0])
-    radius = 0.2
+    rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
+
+    Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, 0.2, -0.2]), rotation_matrix)
+    Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, -0.2, -0.2]), rotation_matrix)
+
+    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
+    reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
+    time.sleep(3)
     make_circle(reachy, center, orientation, radius)
 
     time.sleep(2)

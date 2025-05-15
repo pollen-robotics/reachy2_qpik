@@ -35,7 +35,7 @@ class PinocchioIK:
         self.ee_frame_id = self.model.getFrameId(self.ee_frame)
         self.joint_id = self.model.frames[self.ee_frame_id].parent
 
-        self.IT_MAX = 1
+        self.IT_MAX = 100
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.damp = 7.5e-3  # Damping factor
 
@@ -90,30 +90,6 @@ class PinocchioIK:
             return shared_joints + r_arm_joints
         else:
             return shared_joints
-
-    # def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> tuple[bool, npt.NDArray[np.float64], str]:
-    #     """Reduce the goal pose if it's out of reach and prevent backward tip."""
-
-    #     ik_parameters = {
-    #         "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0]),
-    #         "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0]),
-    #         "max_arm_length": np.float64(0.66),
-    #     }
-    #     goal_pose = copy.deepcopy(goal_pose)
-    #     goal_position = goal_pose[:3, 3]
-    #     d_shoulder_goal = np.linalg.norm(goal_position - ik_parameters[f"{self.arm}_shoulder_position"])
-    #     state = ""
-    #     is_reachable = True
-
-    #     if d_shoulder_goal > ik_parameters["max_arm_length"]:
-    #         is_reachable = False
-    #         direction = goal_position - ik_parameters[f"{self.arm}_shoulder_position"]
-    #         direction = direction / (np.linalg.norm(direction) + 1e-6)
-    #         goal_position = ik_parameters[f"{self.arm}_shoulder_position"] + direction * ik_parameters["max_arm_length"]
-    #         goal_pose[:3, 3] = goal_position
-    #         state = "Pose out of reach"
-
-    #     return is_reachable, goal_pose, state
 
     def is_pose_in_robot_reach(self, goal_pose: npt.NDArray[np.float64]) -> tuple[bool, npt.NDArray[np.float64], str]:
         """Reduce the goal pose if it's out of reach and prevent backward tip."""
@@ -182,7 +158,7 @@ class PinocchioIK:
             pin.updateFramePlacements(self.model, self.data)
             current_ee = self.data.oMf[self.ee_frame_id]
             iMd = current_ee.actInv(oMdes)
-            err = pin.log(iMd).vector  # [rad]
+            err = pin.log(iMd).vector
 
             if norm(err) < self.eps:
                 success = True
@@ -228,7 +204,7 @@ class PinocchioIK:
 
         current_ee = self.data.oMf[self.ee_frame_id]
         iMd = current_ee.actInv(oMdes)
-        err = pin.log(iMd).vector  # [rad]
+        err = pin.log(iMd).vector
 
         J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
         J = -np.dot(pin.Jlog6(iMd.inverse()), J)

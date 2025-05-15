@@ -42,10 +42,23 @@ def wrist_tilt_test(
     amp_deg: float = 45.0,
     n_cycles: int = 3,
     cycle_duration: float = 4.0,
-    freq_hz: float = 100.0,
+    control_frequency: float = 120.0,
 ):
-    reachy.goto_posture("elbow_90", wait=True)
-    time.sleep(0.2)
+    q0 = np.array([0, 10, -10, -90, 0, 0, 0])
+    M_target_r = np.array(reachy.r_arm.forward_kinematics(q0.tolist()))
+
+    M_target_l = np.array(
+        [
+            [M_target_r[0, 0], -M_target_r[0, 1], M_target_r[0, 2], M_target_r[0, 3]],
+            [-M_target_r[1, 0], M_target_r[1, 1], -M_target_r[1, 2], -M_target_r[1, 3]],
+            [M_target_r[2, 0], -M_target_r[2, 1], M_target_r[2, 2], M_target_r[2, 3]],
+            [0, 0, 0, 1],
+        ]
+    )
+
+    reachy.r_arm.goto(M_target_r, interpolation_space="cartesian_space", duration=1.5)
+    reachy.l_arm.goto(M_target_l, interpolation_space="cartesian_space", duration=1.5)
+    time.sleep(1.7)
 
     base_pose = getattr(reachy, arm).forward_kinematics()
     R0 = base_pose[:3, :3]
@@ -62,7 +75,7 @@ def wrist_tilt_test(
     slerp_fwd = Slerp(s, R.concatenate([rot0, rot_fwd]))
     slerp_bwd = Slerp(s, R.concatenate([rot0, rot_bwd]))
 
-    pts_per_half = int((cycle_duration / 2) * freq_hz)
+    pts_per_half = int((cycle_duration / 2) * control_frequency)
     s_samples = np.linspace(0, 1, pts_per_half)
     seq = []
     for _ in range(n_cycles):
@@ -77,7 +90,7 @@ def wrist_tilt_test(
     final_pose = make_homogenous_matrix_from_rotation_matrix(R0, p0)
     seq.append(final_pose)
 
-    dt = 1.0 / freq_hz
+    dt = 1.0 / control_frequency
     for pose in seq:
         t0 = time.time()
         go_to_pose(reachy, pose, arm)
@@ -92,11 +105,11 @@ if __name__ == "__main__":
     time.sleep(0.5)
 
     print("Wrist tilt on right arm…")
-    wrist_tilt_test(reachy, arm="r_arm", amp_deg=60, n_cycles=2, cycle_duration=3.0)
+    wrist_tilt_test(reachy, arm="r_arm", amp_deg=45, n_cycles=2, cycle_duration=3.0)
     time.sleep(1)
 
     print("…and now on left arm")
-    wrist_tilt_test(reachy, arm="l_arm", amp_deg=-60, n_cycles=2, cycle_duration=3.0)
+    wrist_tilt_test(reachy, arm="l_arm", amp_deg=-45, n_cycles=2, cycle_duration=3.0)
     time.sleep(1)
 
     reachy.turn_off()

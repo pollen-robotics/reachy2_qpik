@@ -30,6 +30,6 @@ def quat_error(q_des: npt.NDArray[np.float64], q: npt.NDArray[np.float64]) -> np
     return np.arccos(c)
 
 
-def combined_error(ep: float, etheta: float, _lambda: float = 1e-6 / np.deg2rad(1) ** 2) -> np.float64:
+def combined_error(ep: float, etheta: float, lambda_theta: float = 1e-6 / np.deg2rad(1) ** 2) -> np.float64:
     """Compute a weighted combination of position and orientation errors."""
-    return np.sqrt(ep**2 + _lambda * etheta**2)
+    return np.sqrt(ep**2 + lambda_theta * etheta**2)

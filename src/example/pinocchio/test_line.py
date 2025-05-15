@@ -1,11 +1,12 @@
 """Pinocchio IK line motion test."""
 
+import csv
+import os
 import time
 
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import combined_error, l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -50,12 +51,20 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 4.0
+    reachy: ReachySDK,
+    start_pose: npt.NDArray[np.float64],
+    end_pose: npt.NDArray[np.float64],
+    duration: float = 4.0,
+    collect_data: bool = False,
 ) -> None:
     start_position = start_pose[0]
     end_position = end_pose[0]
     start_orientation = start_pose[1]
     end_orientation = end_pose[1]
+
+    if collect_data:
+        input("`collect_data` is set to `True`. Press `Enter` to continue if you are sure with the parameters:")
+        data_lst = []
 
     control_frequency = 120.0
     dt = 1.0 / control_frequency
@@ -72,41 +81,84 @@ def make_line(
         orientation = start_orientation + (end_orientation - start_orientation) * (i / nbr_points)
         rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
         r_pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
-        # t1 = time.time()
         go_to_pose(reachy, r_pose, "r_arm")
-        # t2 = time.time()
 
         l_position = l_start_position + (l_end_position - l_start_position) * (i / nbr_points)
         l_orientation = l_start_orientation + (l_end_orientation - l_start_orientation) * (i / nbr_points)
         l_rotation_matrix = R.from_euler("xyz", l_orientation).as_matrix()
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
-        # t3 = time.time()
         go_to_pose(reachy, l_pose, "l_arm")
-        # t4 = time.time()
 
-        # r_real_pose = reachy.r_arm.forward_kinematics()
-        # l_real_pose = reachy.l_arm.forward_kinematics()
-        # compute_metrics(r_pose, l_pose, r_real_pose, l_real_pose)
+        if collect_data:
+            time.sleep(0.05)
+
+            l_joints = reachy.l_arm.get_current_positions()
+            r_joints = reachy.r_arm.get_current_positions()
+
+            r_real_pose = reachy.r_arm.forward_kinematics()
+            l_real_pose = reachy.l_arm.forward_kinematics()
+
+            data = [i * dt, l_joints, l_pose, l_real_pose, r_joints, r_pose, r_real_pose]
+            data_lst.append(data)
 
         # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
         # print(f"Right arm: {1000*(t2-t1)} ms")
         # print(f"Left arm: {1000*(t4-t3)} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
 
+    if collect_data:
+        save_data_to_csv(data_lst, filename="num_line_data.csv")
 
-def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
-    r_ep = l2_error(M_r[:3, 3], r_real_pose[:3, 3])
-    l_ep = l2_error(M_l[:3, 3], l_real_pose[:3, 3])
 
-    r_etheta = rodrigues_error(M_r[:3, :3], r_real_pose[:3, :3])
-    l_etheta = rodrigues_error(M_l[:3, :3], l_real_pose[:3, :3])
+def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
+    """Save collected data to a CSV file."""
+    os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, filename)
 
-    r_combined = combined_error(r_ep, r_etheta)
-    l_combined = combined_error(l_ep, l_etheta)
+    header = [
+        "time",
+        "l_q0",
+        "l_q1",
+        "l_q2",
+        "l_q3",
+        "l_q4",
+        "l_q5",
+        "l_q6",
+        "r_q0",
+        "r_q1",
+        "r_q2",
+        "r_q3",
+        "r_q4",
+        "r_q5",
+        "r_q6",
+        "l_pose",
+        "l_real_pose",
+        "r_pose",
+        "r_real_pose",
+    ]
 
-    print(f"Right arm - pos error: {r_ep:.4f}, rot error: {r_etheta:.4f}, combined: {r_combined:.4f}")
-    print(f"Left arm  - pos error: {l_ep:.4f}, rot error: {l_etheta:.4f}, combined: {l_combined:.4f}")
-    print("_" * 20)
+    with open(filepath, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+
+        for data in data_lst:
+            time_val = data[0]
+            l_joints = data[1]
+            l_pose = data[2]
+            l_real_pose = data[3]
+            r_joints = data[4]
+            r_pose = data[5]
+            r_real_pose = data[6]
+
+            row = (
+                [time_val]
+                + l_joints
+                + r_joints
+                + [l_pose.tolist(), l_real_pose.tolist(), r_pose.tolist(), r_real_pose.tolist()]
+            )
+
+            writer.writerow(row)
+    print(f"Data was succesfully saved to {filepath}")
 
 
 def main() -> None:
@@ -123,9 +175,14 @@ def main() -> None:
     print("Test - Making a line")
     start_pose = np.array([[0.3, -0.22, -0.60], [0, 0, 0]])
     end_pose = np.array([[0.3, -0.22, 0.50], [0, -np.pi, 0]])
-    make_line(reachy, start_pose, end_pose)
-    make_line(reachy, end_pose, start_pose)
+    Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.3, 0.22, -0.60]), np.eye(3))
+    Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.3, -0.22, -0.60]), np.eye(3))
 
+    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
+    reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
+    time.sleep(3)
+
+    make_line(reachy, start_pose, end_pose, collect_data=False)
     time.sleep(2)
 
     reachy.turn_off()

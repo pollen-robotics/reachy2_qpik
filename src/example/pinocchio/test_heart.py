@@ -1,6 +1,8 @@
 """Pinocchio IK heart motion test."""
 
+import csv
 import logging
+import os
 import time
 
 import numpy as np
@@ -58,19 +60,25 @@ def draw_heart(
     center_x: float = 0.55,
     center_y_offset: float = 0.25,
     base_z: float = -0.05,
-    scale: float = 0.01,
-    duration: float = 6.0,
-    freq: float = 100.0,
+    scale: float = 0.008,
+    duration: float = 3.0,
+    freq: float = 120.0,
+    number_of_turns: int = 3,
+    collect_data: bool = False,
 ):
     """
     Draw two hearts with Reachy's arms.
     """
-    n_pts = int(duration * freq)
-    ys, zs = heart_curve(scale, n_pts)
+    nbr_points = int(duration * freq)
+    ys, zs = heart_curve(scale, nbr_points)
     dt = 1.0 / freq
 
-    left_positions = np.stack([np.full(n_pts, center_x), center_y_offset + ys, base_z + zs], axis=1)
-    right_positions = np.stack([np.full(n_pts, center_x), -center_y_offset + ys, base_z + zs], axis=1)
+    if collect_data:
+        input("`collect_data` is set to `True`. Press `Enter` to continue if you are sure with the parameters:")
+        data_lst = []
+
+    left_positions = np.stack([np.full(nbr_points, center_x), center_y_offset + ys, base_z + zs], axis=1)
+    right_positions = np.stack([np.full(nbr_points, center_x), -center_y_offset + ys, base_z + zs], axis=1)
     right_positions = right_positions[::-1]
 
     M_l0 = make_homogenous_matrix_from_rotation_matrix(l_R, left_positions[0])
@@ -79,13 +87,81 @@ def draw_heart(
     reachy.r_arm.goto(M_r0, interpolation_space="cartesian_space", duration=1.5)
     time.sleep(1.5)
 
-    for lp, rp in zip(left_positions, right_positions):
-        t = time.time()
-        M_l = make_homogenous_matrix_from_rotation_matrix(l_R, lp)
-        M_r = make_homogenous_matrix_from_rotation_matrix(r_R, rp)
-        go_to_pose(reachy, M_l, "l_arm")
-        go_to_pose(reachy, M_r, "r_arm")
-        time.sleep(max(dt - (time.time() - t), 0.0))
+    for i in range(number_of_turns):
+        for j, (lp, rp) in enumerate(zip(left_positions, right_positions)):
+            t = time.time()
+            M_l = make_homogenous_matrix_from_rotation_matrix(l_R, lp)
+            M_r = make_homogenous_matrix_from_rotation_matrix(r_R, rp)
+            go_to_pose(reachy, M_l, "l_arm")
+            go_to_pose(reachy, M_r, "r_arm")
+
+            if collect_data:
+                time.sleep(0.05)
+
+                r_real_pose = reachy.r_arm.forward_kinematics()
+                l_real_pose = reachy.l_arm.forward_kinematics()
+
+                l_joints = reachy.l_arm.get_current_positions()
+                r_joints = reachy.r_arm.get_current_positions()
+
+                data = [(i * nbr_points + j) * dt, l_joints, M_l, l_real_pose, r_joints, M_r, r_real_pose]
+                data_lst.append(data)
+
+            time.sleep(max(dt - (time.time() - t), 0.0))
+
+    if collect_data:
+        save_data_to_csv(data_lst, filename="num_heart_data.csv")
+
+
+def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
+    """Save collected data to a CSV file."""
+    os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, filename)
+
+    header = [
+        "time",
+        "l_q0",
+        "l_q1",
+        "l_q2",
+        "l_q3",
+        "l_q4",
+        "l_q5",
+        "l_q6",
+        "r_q0",
+        "r_q1",
+        "r_q2",
+        "r_q3",
+        "r_q4",
+        "r_q5",
+        "r_q6",
+        "l_pose",
+        "l_real_pose",
+        "r_pose",
+        "r_real_pose",
+    ]
+
+    with open(filepath, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+
+        for data in data_lst:
+            time_val = data[0]
+            l_joints = data[1]
+            l_pose = data[2]
+            l_real_pose = data[3]
+            r_joints = data[4]
+            r_pose = data[5]
+            r_real_pose = data[6]
+
+            row = (
+                [time_val]
+                + l_joints
+                + r_joints
+                + [l_pose.tolist(), l_real_pose.tolist(), r_pose.tolist(), r_real_pose.tolist()]
+            )
+
+            writer.writerow(row)
+    print(f"Data was succesfully saved to {filepath}")
 
 
 if __name__ == "__main__":

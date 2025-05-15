@@ -5,7 +5,6 @@ import time
 import numpy as np
 import numpy.typing as npt
 from google.protobuf.wrappers_pb2 import FloatValue, Int32Value
-from metrics import combined_error, l2_error, rodrigues_error
 from reachy2_sdk import ReachySDK
 from reachy2_sdk_api.arm_pb2 import (
     ArmCartesianGoal,
@@ -50,14 +49,14 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 4.0
+    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 1.0
 ) -> None:
     start_position = start_pose[0]
     end_position = end_pose[0]
     start_orientation = start_pose[1]
     end_orientation = end_pose[1]
 
-    control_frequency = 100.0
+    control_frequency = 120.0
     dt = 1.0 / control_frequency
     nbr_points = int(duration * control_frequency)
 
@@ -82,7 +81,6 @@ def make_line(
 
         # r_real_pose = reachy.r_arm.forward_kinematics()
         # l_real_pose = reachy.l_arm.forward_kinematics()
-        # compute_metrics(r_pose, l_pose, r_real_pose, l_real_pose)
 
         # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
@@ -94,8 +92,8 @@ def make_rectangle(
     B: npt.NDArray[np.float64],
     C: npt.NDArray[np.float64],
     D: npt.NDArray[np.float64],
-    duration: float = 2.0,
-    number_of_turns: int = 3,
+    duration: float = 4.0,
+    number_of_turns: int = 4,
 ) -> None:
     orientation = [0, -np.pi / 2, 0]
 
@@ -104,21 +102,6 @@ def make_rectangle(
         make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration)
         make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), duration)
         make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), duration)
-
-
-def compute_metrics(M_r, M_l, r_real_pose, l_real_pose):
-    r_ep = l2_error(M_r[:3, 3], r_real_pose[:3, 3])
-    l_ep = l2_error(M_l[:3, 3], l_real_pose[:3, 3])
-
-    r_etheta = rodrigues_error(M_r[:3, :3], r_real_pose[:3, :3])
-    l_etheta = rodrigues_error(M_l[:3, :3], l_real_pose[:3, :3])
-
-    l_combined = combined_error(r_ep, r_etheta)
-    r_combined = combined_error(l_ep, l_etheta)
-
-    print(f"Right arm - pos error: {r_ep:.4f}, rot error: {r_etheta:.4f}, combined: {r_combined:.4f}")
-    print(f"Left arm  - pos error: {l_ep:.4f}, rot error: {l_etheta:.4f}, combined: {l_combined:.4f}")
-    print("_" * 20)
 
 
 def main() -> None:
