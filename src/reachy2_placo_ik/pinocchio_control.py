@@ -12,12 +12,10 @@ import pinocchio as pin
 class PinocchioControl:
     """Pinocchio Tracking Control for Reachy2."""
 
-    def __init__(self, node, ik_solver, ik_step: float = 0.1, dt: float = 1 / 500, Kp: float = 1.5):
+    def __init__(self, node, ik_solver, dt: float = 1 / 500):
         """Initialize the class."""
         self.node = node
-        self.ik_step = ik_step  # [s]
         self.dt = dt  # [s]
-        self.Kp = Kp
         self.lock = threading.Lock()
 
         self.q_present = {
@@ -31,6 +29,7 @@ class PinocchioControl:
         }
 
         self.ik_solver = ik_solver
+        self.ik_step = ik_solver["r_arm"].dt  # [s]
 
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
@@ -81,12 +80,8 @@ class PinocchioControl:
 
                 target_copy = target.copy()
 
-                q_dot_base = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
-                q_desired, _, _ = self.ik_solver[arm].inverse_kinematics(target, q_current)
+                q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
 
-                e_joint = q_desired - q_current
-
-                q_dot = q_dot_base + self.Kp * e_joint
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
                 with self.lock:

@@ -50,45 +50,6 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
     stub.SendArmCartesianGoal(req)
 
 
-def make_line(
-    reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 4.0
-) -> None:
-    start_position = start_pose[0]
-    end_position = end_pose[0]
-    start_orientation = start_pose[1]
-    end_orientation = end_pose[1]
-
-    control_frequency = 100.0
-    dt = 1.0 / control_frequency
-    nbr_points = int(duration * control_frequency)
-
-    l_start_position = np.array([start_position[0], -start_position[1], start_position[2]])
-    l_end_position = np.array([end_position[0], -end_position[1], end_position[2]])
-    l_start_orientation = np.array([-start_orientation[0], start_orientation[1], -start_orientation[2]])
-    l_end_orientation = np.array([-end_orientation[0], end_orientation[1], -end_orientation[2]])
-
-    for i in range(nbr_points):
-        t = time.time()
-        position = start_position + (end_position - start_position) * (i / nbr_points)
-        orientation = start_orientation + (end_orientation - start_orientation) * (i / nbr_points)
-        rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
-        r_pose = make_homogenous_matrix_from_rotation_matrix(position, rotation_matrix)
-        go_to_pose(reachy, r_pose, "r_arm")
-
-        l_position = l_start_position + (l_end_position - l_start_position) * (i / nbr_points)
-        l_orientation = l_start_orientation + (l_end_orientation - l_start_orientation) * (i / nbr_points)
-        l_rotation_matrix = R.from_euler("xyz", l_orientation).as_matrix()
-        l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
-        go_to_pose(reachy, l_pose, "l_arm")
-
-        # r_real_pose = reachy.r_arm.forward_kinematics()
-        # l_real_pose = reachy.l_arm.forward_kinematics()
-        # compute_metrics(r_pose, l_pose, r_real_pose, l_real_pose)
-
-        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
-        time.sleep(max(dt - (time.time() - t), 0.0))
-
-
 def make_circle(
     reachy: ReachySDK,
     center: npt.NDArray[np.float64],

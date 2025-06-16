@@ -7,6 +7,7 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
+import qpsolvers
 from numpy.linalg import norm, solve
 
 
@@ -28,7 +29,8 @@ class PinocchioIK:
         robot = robot.buildReducedRobot(locked_joints)
 
         self.robot = robot
-        self.model, self.data = robot.model, robot.data
+        self.model, self.data, self.q0 = robot.model, robot.data, robot.q0
+        self.nv = self.model.nv
 
         self.arm = arm
         self.ee_frame = f"{arm}_tip"
@@ -38,8 +40,26 @@ class PinocchioIK:
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.damp = 7.5e-3  # Damping factor
+        self.qp_damp = 1e-12
         self.Kp = 0.025  # Proportional gain
         self.dt = 0.0025  # Time step
+        self.W = np.diag([1.725] * 3 + [0.1] * 3)
+
+        self.v_max = np.ones(self.nv)
+        self.v_max[0] = 100
+        self.v_max[1] = 100
+        self.v_max[2] = 100
+        self.v_max[3] = 100
+        self.v_max[4] = 100
+        self.v_max[5] = 100
+        self.v_max[6] = 100
+        self.v_min = -self.v_max
+
+        if arm == "l_arm":
+            self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
+        else:
+            self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
+        self.alpha = 1e-6
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -169,10 +189,16 @@ class PinocchioIK:
                 break
 
             J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-            J = -np.dot(pin.Jlog6(iMd.inverse()), J)
+            # J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
-            # Closed-Loop Inverse Kinematics
-            q_dot = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), v))  # [rad.s⁻¹]
+            # QP terms
+            P = J.T @ self.W @ J + self.qp_damp * np.eye(self.nv)
+            r = -J.T @ self.W @ v
+
+            G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+            h = np.hstack([self.v_max, -self.v_min])
+
+            q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
             q = pin.integrate(self.model, q, q_dot * self.dt)
 
             if not success:
@@ -210,9 +236,19 @@ class PinocchioIK:
         err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
 
         v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
-        J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-        J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
-        q_dot = -J.T.dot(solve(J.dot(J.T) + self.damp * np.eye(6), v))  # [rad.s⁻¹]
+        v_posture = (self.q0_pref - q) / self.dt
+
+        J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
+        # J = -np.dot(pin.Jlog6(iMd.inverse()), J)
+
+        # QP terms
+        P = J.T @ self.W @ J + self.qp_damp * np.eye(self.nv) + self.alpha * np.eye(self.nv)
+        r = -J.T @ self.W @ v + -self.alpha * v_posture
+
+        G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h = np.hstack([self.v_max, -self.v_min])
+
+        q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
 
         return q_dot

@@ -107,7 +107,7 @@ def make_line(
         time.sleep(max(dt - (time.time() - t), 0.0))
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="num_line_data.csv")
+        save_data_to_csv(data_lst, filename="pink_line_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
