@@ -37,8 +37,8 @@ class PinocchioIK:
 
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.damp = 7.5e-3  # Damping factor
-        self.Kp = 0.025  # Proportional gain
+        self.damp = 7.5e-4  # Damping factor
+        self.Kp = 0.05  # Proportional gain
         self.dt = 0.0025  # Time step
 
     def default_locked_joints(self, arm: str) -> list[str]:

@@ -89,9 +89,12 @@ def make_line(
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
         go_to_pose(reachy, l_pose, "l_arm")
 
-        if collect_data:
-            time.sleep(0.05)
+        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
+        # print(f"Right arm: {1000*(t2-t1)} ms")
+        # print(f"Left arm: {1000*(t4-t3)} ms")
+        time.sleep(max(dt - (time.time() - t), 0.0))
 
+        if collect_data:
             l_joints = reachy.l_arm.get_current_positions()
             r_joints = reachy.r_arm.get_current_positions()
 
@@ -101,13 +104,8 @@ def make_line(
             data = [i * dt, l_joints, l_pose, l_real_pose, r_joints, r_pose, r_real_pose]
             data_lst.append(data)
 
-        # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
-        # print(f"Right arm: {1000*(t2-t1)} ms")
-        # print(f"Left arm: {1000*(t4-t3)} ms")
-        time.sleep(max(dt - (time.time() - t), 0.0))
-
     if collect_data:
-        save_data_to_csv(data_lst, filename="pink_line_data.csv")
+        save_data_to_csv(data_lst, filename="sym_line_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -182,7 +180,7 @@ def main() -> None:
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
 
-    make_line(reachy, start_pose, end_pose, collect_data=False)
+    make_line(reachy, start_pose, end_pose, collect_data=True)
     time.sleep(2)
 
     reachy.turn_off()

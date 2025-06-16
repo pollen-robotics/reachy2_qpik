@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 import qpsolvers
-from numpy.linalg import norm, solve
+from numpy.linalg import norm
 
 
 class PinocchioIK:
@@ -39,9 +39,9 @@ class PinocchioIK:
 
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.damp = 7.5e-3  # Damping factor
+        self.damp = 7.5e-4  # Damping factor
         self.qp_damp = 1e-12
-        self.Kp = 0.025  # Proportional gain
+        self.Kp = 0.05  # Proportional gain
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 

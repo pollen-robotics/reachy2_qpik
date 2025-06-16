@@ -74,7 +74,7 @@ def make_circle(
     dt = 1 / control_frequency
 
     if collect_data:
-        input("collect_data is set to True. Press Entrer to continue if you are sure with the parameters:")
+        input("`collect_data` is set to `True`. Press `Enter` to continue if you are sure with the parameters:")
         data_lst = []
 
     for i in range(number_of_turns):
@@ -91,9 +91,9 @@ def make_circle(
             go_to_pose(reachy, l_pose, "l_arm")
             # print((time.time() - t)*1000)
 
-            if collect_data:
-                time.sleep(0.05)
+            time.sleep(max(dt - (time.time() - t), 0.0))
 
+            if collect_data:
                 r_real_pose = reachy.r_arm.forward_kinematics()
                 l_real_pose = reachy.l_arm.forward_kinematics()
 
@@ -103,10 +103,8 @@ def make_circle(
                 data = [(i * nbr_points + j) * dt, l_joints, l_pose, l_real_pose, r_joints, r_pose, r_real_pose]
                 data_lst.append(data)
 
-            time.sleep(max(dt - (time.time() - t), 0.0))
-
     if collect_data:
-        save_data_to_csv(data_lst, filename="num_circle_data.csv")
+        save_data_to_csv(data_lst, filename="qp_circle_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -178,8 +176,8 @@ def main() -> None:
     orientation = np.array([0, -np.pi / 2, 0])
     rotation_matrix = R.from_euler("xyz", orientation).as_matrix()
 
-    Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, 0.2, -0.2]), rotation_matrix)
-    Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, -0.2, -0.2]), rotation_matrix)
+    Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, 0.25, -0.2]), rotation_matrix)
+    Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, -0.25, -0.2]), rotation_matrix)
 
     reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")

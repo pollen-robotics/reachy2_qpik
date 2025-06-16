@@ -95,9 +95,9 @@ def draw_heart(
             go_to_pose(reachy, M_l, "l_arm")
             go_to_pose(reachy, M_r, "r_arm")
 
-            if collect_data:
-                time.sleep(0.05)
+            time.sleep(max(dt - (time.time() - t), 0.0))
 
+            if collect_data:
                 r_real_pose = reachy.r_arm.forward_kinematics()
                 l_real_pose = reachy.l_arm.forward_kinematics()
 
@@ -106,8 +106,6 @@ def draw_heart(
 
                 data = [(i * nbr_points + j) * dt, l_joints, M_l, l_real_pose, r_joints, M_r, r_real_pose]
                 data_lst.append(data)
-
-            time.sleep(max(dt - (time.time() - t), 0.0))
 
     if collect_data:
         save_data_to_csv(data_lst, filename="num_heart_data.csv")
