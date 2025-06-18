@@ -94,6 +94,7 @@ def make_circle(
             time.sleep(max(dt - (time.time() - t), 0.0))
 
             if collect_data:
+                time.sleep(0.05)
                 r_real_pose = reachy.r_arm.forward_kinematics()
                 l_real_pose = reachy.l_arm.forward_kinematics()
 
@@ -182,7 +183,7 @@ def main() -> None:
     reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
-    make_circle(reachy, center, orientation, radius, collect_data=False)
+    make_circle(reachy, center, orientation, radius, collect_data=True)
 
     time.sleep(2)
 

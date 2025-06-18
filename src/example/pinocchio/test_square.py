@@ -93,15 +93,15 @@ def make_rectangle(
     C: npt.NDArray[np.float64],
     D: npt.NDArray[np.float64],
     duration: float = 4.0,
-    number_of_turns: int = 4,
+    number_of_turns: int = 250,
 ) -> None:
     orientation = [0, -np.pi / 2, 0]
 
     for _ in range(number_of_turns):
-        make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), duration)
-        make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration)
-        make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), duration)
-        make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), duration)
+        make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), duration / 4)
+        make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration / 4)
+        make_line(reachy, np.array([C, orientation]), np.array([D, orientation]), duration / 4)
+        make_line(reachy, np.array([D, orientation]), np.array([A, orientation]), duration / 4)
 
 
 def main() -> None:

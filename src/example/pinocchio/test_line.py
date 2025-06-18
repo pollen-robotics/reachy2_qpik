@@ -95,6 +95,7 @@ def make_line(
         time.sleep(max(dt - (time.time() - t), 0.0))
 
         if collect_data:
+            time.sleep(0.05)
             l_joints = reachy.l_arm.get_current_positions()
             r_joints = reachy.r_arm.get_current_positions()
 
@@ -105,7 +106,7 @@ def make_line(
             data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="sym_line_data.csv")
+        save_data_to_csv(data_lst, filename="qp_line_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:

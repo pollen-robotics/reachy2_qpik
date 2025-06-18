@@ -28,6 +28,11 @@ class PinocchioControl:
             "r_arm": None,
         }
 
+        self.joint_velocity_limits = {
+            "l_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
+            "r_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
+        }
+
         self.ik_solver = ik_solver
         self.ik_step = ik_solver["r_arm"].dt  # [s]
 
@@ -81,6 +86,13 @@ class PinocchioControl:
                 target_copy = target.copy()
 
                 q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
+
+                limits = self.joint_velocity_limits[arm]
+                scaling = np.abs(q_dot) / limits
+                max_scaling = np.max(scaling)
+
+                if max_scaling > 1.0:
+                    q_dot = q_dot / max_scaling
 
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 

@@ -1,4 +1,4 @@
-"""Reachy2 Pinocchio Inverse Kinematics class."""
+"""Reachy2 Pinocchio Quadratic Programming IK class."""
 
 import copy
 import os
@@ -59,7 +59,7 @@ class PinocchioIK:
             self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
         else:
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
-        self.alpha = 1e-6
+        self.alpha = 1e-9
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""

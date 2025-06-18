@@ -1,7 +1,7 @@
 import numpy as np
-
-# from scipy.spatial.transform import Rotation as R
+import numpy.typing as npt
 import pytest
+from scipy.spatial.transform import Rotation as R
 
 
 @pytest.mark.cicd

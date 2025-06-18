@@ -167,7 +167,9 @@ def check_precision_and_symmetry(
 
     # calculate l2 distance between r_joints and l_mod
     l2_dist = l2_error(ik_r, l_mod)
-    print(f"l2_dist: {l2_dist}")
+    print(f"l2_dist: {l2_dist:.8f}")
+    # print(ik_r)
+    # print(l_mod)
 
     l_position_diff = l2_error(l_real_pose[:3, 3], M_l[:3, 3])
     r_position_diff = l2_error(r_real_pose[:3, 3], M_r[:3, 3])
