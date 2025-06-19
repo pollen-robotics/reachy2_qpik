@@ -109,7 +109,7 @@ def draw_heart(
                 data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="qp_heart_data.csv")
+        save_data_to_csv(data_lst, filename="sym_heart_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -176,6 +176,6 @@ if __name__ == "__main__":
     time.sleep(0.5)
 
     print("Test - Making heart")
-    draw_heart(reachy, collect_data=False)
+    draw_heart(reachy, collect_data=True)
 
     reachy.turn_off()

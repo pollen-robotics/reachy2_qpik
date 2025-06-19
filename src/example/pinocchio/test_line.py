@@ -106,7 +106,7 @@ def make_line(
             data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="qp_line_data.csv")
+        save_data_to_csv(data_lst, filename="sym_line_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:

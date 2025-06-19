@@ -105,7 +105,7 @@ def make_circle(
                 data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="qp_circle_data.csv")
+        save_data_to_csv(data_lst, filename="sym_circle_data.csv")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:

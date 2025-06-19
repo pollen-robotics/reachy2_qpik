@@ -39,9 +39,8 @@ class PinocchioIK:
 
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.damp = 7.5e-4  # Damping factor
-        self.qp_damp = 1e-12
-        self.Kp = 0.05  # Proportional gain
+        self.damp = 1e-6
+        self.Kp = 0.4  # Proportional gain
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
@@ -183,17 +182,18 @@ class PinocchioIK:
 
             v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
 
+            q_dot_posture = (self.q0_pref - q) / self.dt
+
             if norm(err) < self.eps:
                 success = True
                 state = "Convergence reached."
                 break
 
             J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-            # J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
             # QP terms
-            P = J.T @ self.W @ J + self.qp_damp * np.eye(self.nv)
-            r = -J.T @ self.W @ v
+            P = J.T @ self.W @ J + self.damp * np.eye(self.nv) + self.alpha * np.eye(self.nv)
+            r = -J.T @ self.W @ v + -self.alpha * q_dot_posture
 
             G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
             h = np.hstack([self.v_max, -self.v_min])
@@ -213,7 +213,7 @@ class PinocchioIK:
         # final_ee_pose = T_baselink_torso.inverse() * self.data.oMf[self.ee_frame_id]
         # print(final_ee_pose)
 
-        return q, True, state
+        return q, success, state
 
     def compute_velocity(
         self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
@@ -237,14 +237,13 @@ class PinocchioIK:
 
         v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
 
-        v_posture = (self.q0_pref - q) / self.dt
+        q_dot_posture = (self.q0_pref - q) / self.dt
 
         J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-        # J = -np.dot(pin.Jlog6(iMd.inverse()), J)
 
         # QP terms
-        P = J.T @ self.W @ J + self.qp_damp * np.eye(self.nv) + self.alpha * np.eye(self.nv)
-        r = -J.T @ self.W @ v + -self.alpha * v_posture
+        P = J.T @ self.W @ J + self.damp * np.eye(self.nv) + self.alpha * np.eye(self.nv)
+        r = -J.T @ self.W @ v + -self.alpha * q_dot_posture
 
         G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
         h = np.hstack([self.v_max, -self.v_min])
