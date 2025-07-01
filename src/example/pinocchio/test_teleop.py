@@ -26,7 +26,7 @@ def go_to_pose(reachy, pose: np.ndarray, arm: str):
     stub.SendArmCartesianGoal(req)
 
 
-JSON_FILE = "pytest1.json"
+JSON_FILE = r"../../config_files/pytest_teleop.json"
 
 
 def load_trajectory(path):

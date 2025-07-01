@@ -72,6 +72,7 @@ def draw_heart(
     nbr_points = int(duration * freq)
     ys, zs = heart_curve(scale, nbr_points)
     dt = 1.0 / freq
+    total_time = 0.0
 
     if collect_data:
         input("`collect_data` is set to `True`. Press `Enter` to continue if you are sure with the parameters:")
@@ -96,6 +97,7 @@ def draw_heart(
             go_to_pose(reachy, M_r, "r_arm")
 
             time.sleep(max(dt - (time.time() - t), 0.0))
+            total_time += time.time() - t
 
             if collect_data:
                 time.sleep(0.05)
@@ -110,6 +112,9 @@ def draw_heart(
 
     if collect_data:
         save_data_to_csv(data_lst, filename="sym_heart_data.csv")
+
+    print(f"Total time: {total_time:.3f} s")
+    print(f"Time for one heart: {total_time / number_of_turns:.3}s")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -176,6 +181,6 @@ if __name__ == "__main__":
     time.sleep(0.5)
 
     print("Test - Making heart")
-    draw_heart(reachy, collect_data=True)
+    draw_heart(reachy, collect_data=False)
 
     reachy.turn_off()

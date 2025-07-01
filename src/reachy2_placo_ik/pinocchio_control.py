@@ -29,8 +29,8 @@ class PinocchioControl:
         }
 
         self.joint_velocity_limits = {
-            "l_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
-            "r_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
+            "l_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
+            "r_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
         }
 
         self.ik_solver = ik_solver

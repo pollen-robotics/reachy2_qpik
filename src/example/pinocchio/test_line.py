@@ -69,6 +69,7 @@ def make_line(
     control_frequency = 120.0
     dt = 1.0 / control_frequency
     nbr_points = int(duration * control_frequency)
+    total_time = 0.0
 
     l_start_position = np.array([start_position[0], -start_position[1], start_position[2]])
     l_end_position = np.array([end_position[0], -end_position[1], end_position[2]])
@@ -93,6 +94,7 @@ def make_line(
         # print(f"Right arm: {1000*(t2-t1)} ms")
         # print(f"Left arm: {1000*(t4-t3)} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
+        total_time += time.time() - t
 
         if collect_data:
             time.sleep(0.05)
@@ -107,6 +109,8 @@ def make_line(
 
     if collect_data:
         save_data_to_csv(data_lst, filename="sym_line_data.csv")
+
+    print(f"Total time: {total_time:.3f} s")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -182,7 +186,7 @@ def main() -> None:
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
 
-    make_line(reachy, start_pose, end_pose, collect_data=True)
+    make_line(reachy, start_pose, end_pose, collect_data=False)
     time.sleep(2)
 
     reachy.turn_off()

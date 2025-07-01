@@ -41,22 +41,38 @@ class PinocchioIK:
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.damp = 1e-6
         self.Kp = 0.4  # Proportional gain
+        self.Ka = 1.0
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
-        self.v_max = np.ones(self.nv)
-        self.v_max[0] = 100
-        self.v_max[1] = 100
-        self.v_max[2] = 100
-        self.v_max[3] = 100
-        self.v_max[4] = 100
-        self.v_max[5] = 100
-        self.v_max[6] = 100
+        self.K_lim = 1.0
+        self.q_min = self.model.lowerPositionLimit
+        self.q_max = self.model.upperPositionLimit
+
+        self.v_max = np.array([6.5] * 7)
         self.v_min = -self.v_max
 
         if arm == "l_arm":
+            # self.q0_pref = [
+            #     -0.26365717475226036,
+            #     6.088962100244157,
+            #     -11.43633214248595,
+            #     -90.00000250447816,
+            #     20.753570774218765,
+            #     3.8409658443799564,
+            #     20.753570774218765,
+            # ]
             self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
         else:
+            # self.q0_pref = [
+            #     -0.26365717475226036,
+            #     -6.088962100244157,
+            #     11.43633214248595,
+            #     -90.00000250447816,
+            #     -20.753570774218765,
+            #     3.8409658443799564,
+            #     -20.753570774218765,
+            # ]
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
         self.alpha = 1e-9
 
@@ -237,6 +253,12 @@ class PinocchioIK:
 
         v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
 
+        # v_lim_upper = (self.q_max - q) / (self.K_lim * self.dt)
+        # v_lim_lower = (self.q_min - q) / (self.K_lim * self.dt)
+
+        # v_upper = np.minimum(self.v_max, v_lim_upper)
+        # v_lower = np.maximum(self.v_min, v_lim_lower)
+
         q_dot_posture = (self.q0_pref - q) / self.dt
 
         J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
@@ -246,8 +268,54 @@ class PinocchioIK:
         r = -J.T @ self.W @ v + -self.alpha * q_dot_posture
 
         G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        # h = np.hstack([v_upper, -v_lower])
         h = np.hstack([self.v_max, -self.v_min])
 
         q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
 
         return q_dot
+
+    def compute_acceleration(
+        self,
+        goal_pose: npt.NDArray[np.float64],
+        current_joints: npt.NDArray[np.float64],
+        previous_joints: npt.NDArray[np.float64],
+    ) -> tuple[npt.NDArray[np.float64], bool, str]:
+        """Compute one IK acceleration step."""
+        current_velocities = (current_joints - previous_joints) / self.dt  # [rad.s⁻¹]
+
+        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
+        R_goal, p_goal = goal_pose[:3, :3], goal_pose[:3, 3]
+        oMdes_tors = pin.SE3(R_goal, p_goal)
+
+        q = current_joints.copy()  # [rad]
+        pin.framesForwardKinematics(self.model, self.data, q)
+        pin.updateFramePlacements(self.model, self.data)
+        T_baselink_torso = self.data.oMf[self.model.getFrameId("torso")]
+        oMdes = T_baselink_torso * oMdes_tors
+
+        J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
+        Jdot = pin.computeFrameJacobianTimeVariation(
+            self.model, self.data, q, current_velocities, self.ee_frame_id, pin.ReferenceFrame.LOCAL
+        )
+
+        current_ee = self.data.oMf[self.ee_frame_id]
+        iMd = current_ee.actInv(oMdes)
+        err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
+
+        v_des = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
+        v_cur = J.dot(current_velocities)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
+        a_des = self.Ka * (v_des - v_cur) / self.dt  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+
+        e_a = a_des - Jdot.dot(current_velocities)
+        P = J.T @ self.W @ J + self.damp * np.eye(self.nv)
+        r = -2 * J.T @ self.W @ e_a
+
+        a_max = (self.v_max - current_velocities) / (self.K_lim * self.dt)
+        a_min = (self.v_min - current_velocities) / (self.K_lim * self.dt)
+        G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h = np.hstack([a_max, -a_min])
+
+        q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
+
+        return q_ddot

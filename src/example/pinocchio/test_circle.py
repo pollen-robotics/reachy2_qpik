@@ -72,6 +72,7 @@ def make_circle(
     Z = Z[::-1]
 
     dt = 1 / control_frequency
+    total_time = 0.0
 
     if collect_data:
         input("`collect_data` is set to `True`. Press `Enter` to continue if you are sure with the parameters:")
@@ -92,6 +93,7 @@ def make_circle(
             # print((time.time() - t)*1000)
 
             time.sleep(max(dt - (time.time() - t), 0.0))
+            total_time += time.time() - t
 
             if collect_data:
                 time.sleep(0.05)
@@ -106,6 +108,9 @@ def make_circle(
 
     if collect_data:
         save_data_to_csv(data_lst, filename="sym_circle_data.csv")
+
+    print(f"Total time: {total_time:.3f} s")
+    print(f"Time for one circle: {total_time / number_of_turns:.3}s")
 
 
 def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv") -> None:
@@ -183,7 +188,7 @@ def main() -> None:
     reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
-    make_circle(reachy, center, orientation, radius, collect_data=True)
+    make_circle(reachy, center, orientation, radius, collect_data=False)
 
     time.sleep(2)
 
