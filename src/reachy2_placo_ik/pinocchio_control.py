@@ -23,6 +23,11 @@ class PinocchioControl:
             "r_arm": np.zeros(7),  # [rad]
         }
 
+        self.q_previous = {
+            "l_arm": np.zeros(7),  # [rad]
+            "r_arm": np.zeros(7),  # [rad]
+        }
+
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
             "l_arm": None,
             "r_arm": None,
@@ -77,16 +82,22 @@ class PinocchioControl:
             loop_count += 1
             for arm in ["l_arm", "r_arm"]:
                 with self.lock:
-                    q_current = self.q_present[arm]  # [rad]
+                    q_current = self.q_present[arm].copy()  # [rad]
+                    q_previous = self.q_previous[arm].copy()  # [rad]
                     target = self.target_pose[arm]
 
                 if target is None:
                     continue
 
+                q_dot_current = (q_current - q_previous) / self.ik_step
+
                 target_copy = target.copy()
 
-                q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
+                q_ddot = self.tick_control(arm, q_current, q_previous, target_copy)  # [rad.s⁻²]
 
+                q_dot = q_dot_current + q_ddot * self.ik_step  # [rad.s⁻¹]
+
+                # Speed normalization
                 limits = self.joint_velocity_limits[arm]
                 scaling = np.abs(q_dot) / limits
                 max_scaling = np.max(scaling)
@@ -97,6 +108,7 @@ class PinocchioControl:
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
                 with self.lock:
+                    self.q_previous[arm] = q_current
                     self.q_present[arm] = q_updated
 
                 self.node.publish_joint_commands(arm, q_updated)
@@ -110,16 +122,21 @@ class PinocchioControl:
                 start_time = time.time()
 
     def tick_control(
-        self, arm: str, q_current: npt.NDArray[np.float64], target_pose: npt.NDArray[np.float64]
+        self,
+        arm: str,
+        q_current: npt.NDArray[np.float64],
+        q_previous: npt.NDArray[np.float64],
+        target_pose: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Update the joint velocities at each tick."""
         try:
-            q_dot = self.ik_solver[arm].compute_velocity(target_pose, q_current)
+            q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_previous)
 
-        except Exception:
-            q_dot = np.zeros_like(q_current)
+        except Exception as e:
+            print(e)
+            q_ddot = np.zeros_like(q_current)
 
-        return q_dot
+        return q_ddot
 
     def set_current_goal(self, arm: str, pose: np.ndarray):
         """Setter method for the current target pose."""
