@@ -43,10 +43,10 @@ class PinocchioIK:
         self.lambda_a = 1e-8
         self.Kp = 0.4  # Proportional gain
 
-        self.Kpc = 5500
-        self.Kdc = 5 * np.sqrt(self.Kpc)
-        self.Kpa = 5500
-        self.Kda = 5 * np.sqrt(self.Kpa)
+        self.Kpc = 8e3
+        self.Kdc = 3.5 * np.sqrt(self.Kpc)
+        self.Kpa = 8e3
+        self.Kda = 3 * np.sqrt(self.Kpa)
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
@@ -80,7 +80,7 @@ class PinocchioIK:
             # ]
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
         self.alpha = 1e-9
-        self.beta = 1e-6
+        self.beta = 1e-2
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
