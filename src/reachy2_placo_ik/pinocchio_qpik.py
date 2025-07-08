@@ -40,9 +40,13 @@ class PinocchioIK:
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.lambda_v = 1e-6
-        self.lambda_a = 1e-20
+        self.lambda_a = 1e-8
         self.Kp = 0.4  # Proportional gain
-        self.Ka = 0.8
+
+        self.Kpc = 5500
+        self.Kdc = 5 * np.sqrt(self.Kpc)
+        self.Kpa = 5500
+        self.Kda = 5 * np.sqrt(self.Kpa)
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
@@ -76,7 +80,7 @@ class PinocchioIK:
             # ]
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
         self.alpha = 1e-9
-        self.beta = 1e-5
+        self.beta = 1e-6
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -284,7 +288,7 @@ class PinocchioIK:
         previous_joints: npt.NDArray[np.float64],
     ) -> tuple[npt.NDArray[np.float64], bool, str]:
         """Compute one IK acceleration step."""
-        current_velocities = (current_joints - previous_joints) / self.dt  # [rad.s⁻¹]
+        q_dot = (current_joints - previous_joints) / self.dt  # [rad.s⁻¹]
 
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
         R_goal, p_goal = goal_pose[:3, :3], goal_pose[:3, 3]
@@ -297,26 +301,37 @@ class PinocchioIK:
         oMdes = T_baselink_torso * oMdes_tors
 
         J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-        pin.computeJointJacobiansTimeVariation(self.model, self.data, q, current_velocities)
+        pin.computeJointJacobiansTimeVariation(self.model, self.data, q, q_dot)
         pin.updateFramePlacements(self.model, self.data)
-        Jdot = pin.getFrameJacobianTimeVariation(self.model, self.data, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
+        J_dot = pin.getFrameJacobianTimeVariation(self.model, self.data, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
 
         current_ee = self.data.oMf[self.ee_frame_id]
         iMd = current_ee.actInv(oMdes)
         err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
 
-        v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
-        v_current = J.dot(current_velocities)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
-        a = self.Ka * (v - v_current) / self.dt  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+        v = J.dot(q_dot)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
+        a = self.Kpc * err - self.Kdc * v  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
-        q_ddot_posture = (self.q0_pref - q) / self.dt**2
+        e_a = a - J_dot.dot(q_dot)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+        q_ddot_posture = self.Kpa * (self.q0_pref - q) - self.Kda * q_dot  # [rad.s⁻²]
 
-        e_a = a - Jdot.dot(current_velocities)
         P = J.T @ self.W @ J + self.lambda_a * np.eye(self.nv) + self.beta * np.eye(self.nv)
         r = -2 * J.T @ self.W @ e_a + -self.beta * q_ddot_posture
 
-        q_ddot_max = (self.q_dot_max - current_velocities) / (self.K_lim * self.dt)
-        q_ddot_min = (self.q_dot_min - current_velocities) / (self.K_lim * self.dt)
+        q_ddot_max = (self.q_dot_max - q_dot) / (self.K_lim * self.dt)  # [rad.s⁻²]
+        q_ddot_min = (self.q_dot_min - q_dot) / (self.K_lim * self.dt)  # [rad.s⁻²]
+
+        q_ddot_max_pos = 2.0 / (self.dt**2) * (self.q_max - current_joints - self.dt * q_dot)  # [rad.s⁻²]
+        q_ddot_min_pos = 2.0 / (self.dt**2) * (self.q_min - current_joints - self.dt * q_dot)  # [rad.s⁻²]
+
+        G_dyn = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h_dyn = np.hstack([q_ddot_max, -q_ddot_min])
+
+        G_pos = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h_pos = np.hstack([q_ddot_max_pos, -q_ddot_min_pos])
+
+        G = np.vstack([G_dyn, G_pos])
+        h = np.hstack([h_dyn, h_pos])
         G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
         h = np.hstack([q_ddot_max, -q_ddot_min])
 

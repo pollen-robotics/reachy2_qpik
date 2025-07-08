@@ -133,7 +133,7 @@ class PinocchioControl:
             q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_previous)
 
         except Exception as e:
-            print(e)
+            print(f"Error in QP computation: {e}")
             q_ddot = np.zeros_like(q_current)
 
         return q_ddot
