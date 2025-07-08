@@ -51,8 +51,8 @@ class PinocchioIK:
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
         self.K_lim = 0.1
-        self.q_min = self.model.lowerPositionLimit
-        self.q_max = self.model.upperPositionLimit
+        self.q_min = self.model.lowerPositionLimit * 1.0
+        self.q_max = self.model.upperPositionLimit * 1.0
 
         self.q_dot_max = np.array([6.5] * 7)
         self.q_dot_min = -self.q_dot_max
@@ -142,7 +142,7 @@ class PinocchioIK:
         ik_params: dict = {
             "r_arm_shoulder_position": np.array([0.0, -0.2, 0.0], dtype=np.float64),
             "l_arm_shoulder_position": np.array([0.0, 0.2, 0.0], dtype=np.float64),
-            "max_arm_length": 0.60,
+            "max_arm_length": 0.63,
             "backward_limit": 0.0,
         }
 
@@ -332,8 +332,8 @@ class PinocchioIK:
 
         G = np.vstack([G_dyn, G_pos])
         h = np.hstack([h_dyn, h_pos])
-        G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
-        h = np.hstack([q_ddot_max, -q_ddot_min])
+        # G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        # h = np.hstack([q_ddot_max, -q_ddot_min])
 
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
 

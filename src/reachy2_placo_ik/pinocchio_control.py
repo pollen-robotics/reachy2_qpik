@@ -136,6 +136,9 @@ class PinocchioControl:
             print(f"Error in QP computation: {e}")
             q_ddot = np.zeros_like(q_current)
 
+        if q_ddot is None:
+            q_ddot = np.zeros_like(q_current)
+
         return q_ddot
 
     def set_current_goal(self, arm: str, pose: np.ndarray):
