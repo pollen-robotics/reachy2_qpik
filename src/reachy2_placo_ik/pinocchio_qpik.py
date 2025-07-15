@@ -332,8 +332,6 @@ class PinocchioIK:
 
         G = np.vstack([G_dyn, G_pos])
         h = np.hstack([h_dyn, h_pos])
-        # G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
-        # h = np.hstack([q_ddot_max, -q_ddot_min])
 
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
 
