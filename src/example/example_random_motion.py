@@ -1,4 +1,4 @@
-"""Pinocchio IK random motion test."""
+"""Pinocchio IK random motion example."""
 
 import time
 
@@ -17,6 +17,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
+    """Send a Cartesian goal to the specified arm."""
     if arm == "r_arm":
         request = ArmCartesianGoal(
             id=reachy.r_arm._part_id,
@@ -51,6 +52,15 @@ def get_homogeneous_matrix_msg_from_euler(
     euler_angles: npt.NDArray[np.float64] = np.array([0.0, 0.0, 0.0]),  # (roll, pitch, yaw)
     degrees: bool = False,
 ) -> npt.NDArray[np.float64]:
+    """Convert a 1x3 XYZ Euler angles to a 4x4 homogenous matrix.
+
+    Args:
+        position: The 1x3 NumPy array representing the position of the end-effector
+        euler_angles: The 1x3 NumPy array representing the Euler angles
+
+    Returns:
+        A 4x4 NumPy array representing the pose matrix
+    """
     homogeneous_matrix = np.eye(4)
     homogeneous_matrix[:3, :3] = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
     homogeneous_matrix[:3, 3] = position
@@ -76,6 +86,7 @@ def make_homogenous_matrix_from_rotation_matrix(
 
 
 def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool = False) -> None:
+    """Perform a random trajectory."""
     q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # [rad]
     ik_r = q
     ik_l = q
@@ -161,6 +172,7 @@ def check_precision_and_symmetry(
     previous_joints: list[float],
     start: bool,
 ) -> bool:
+    """Display metrics (precision, symmetry, continuity, etc.)."""
     is_real_pose_correct = True
 
     l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
@@ -212,6 +224,7 @@ def check_precision_and_symmetry(
 
 
 def main() -> None:
+    """Main function."""
     print("Trying to connect on localhost Reachy...")
     time.sleep(1.0)
     reachy = ReachySDK(host="localhost")

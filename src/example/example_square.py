@@ -1,4 +1,4 @@
-"""Pinocchio IK square motion test."""
+"""Pinocchio IK square motion example."""
 
 import time
 
@@ -51,6 +51,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 def make_line(
     reachy: ReachySDK, start_pose: npt.NDArray[np.float64], end_pose: npt.NDArray[np.float64], duration: float = 1.0
 ) -> None:
+    """Draw a line with Reachy's arms."""
     start_position = start_pose[0]
     end_position = end_pose[0]
     start_orientation = start_pose[1]
@@ -95,8 +96,8 @@ def make_rectangle(
     duration: float = 4.0,
     number_of_turns: int = 250,
 ) -> None:
+    """Draw a rectangle with Reachy's arms."""
     orientation = [0, -np.pi / 2, 0]
-
     for _ in range(number_of_turns):
         make_line(reachy, np.array([A, orientation]), np.array([B, orientation]), duration / 4)
         make_line(reachy, np.array([B, orientation]), np.array([C, orientation]), duration / 4)
@@ -105,6 +106,7 @@ def make_rectangle(
 
 
 def main() -> None:
+    """Main function."""
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
 

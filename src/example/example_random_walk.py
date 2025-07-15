@@ -1,4 +1,4 @@
-"""Pinocchio IK random walk test."""
+"""Pinocchio IK random walk example."""
 
 import time
 
@@ -17,7 +17,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> None:
-    """Send the IK goal to the specified arm"""
+    """Send the IK goal to the specified arm."""
     request = ArmCartesianGoal(
         id=getattr(reachy, arm)._part_id,
         goal_pose=Matrix4x4(data=pose.flatten().tolist()),
@@ -37,10 +37,7 @@ def random_walk_test(
     angle_radius_deg: float = 5.0,
     control_frequency: float = 120.0,
 ) -> dict[str, np.ndarray]:
-    """
-    Perform a random walk.
-    """
-
+    """Perform a random walk."""
     JOINT_LIMITS_DEG = np.array([90.0, 90.0, 180.0, 65.0, 45.0, 45.0, 30.0])
 
     metrics: dict = {
@@ -126,6 +123,7 @@ def random_walk_test(
 
 
 def main():
+    """Main function."""
     reachy = ReachySDK(host="localhost")
     if reachy._grpc_status != "connected":
         raise RuntimeError("Cannot connect to Reachy")

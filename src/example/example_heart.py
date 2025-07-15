@@ -1,4 +1,4 @@
-"""Pinocchio IK heart motion test."""
+"""Pinocchio IK heart motion example."""
 
 import csv
 import logging
@@ -26,6 +26,15 @@ r_R = R.from_euler("xyz", r_gripper_angles, degrees=True).as_matrix()
 def make_homogenous_matrix_from_rotation_matrix(
     rotation_matrix: npt.NDArray[np.float64], position: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:
+    """Convert a 3x3 rotation matrix to a 4x4 homogenous matrix.
+
+    Args:
+        rotation_matrix: The 3x3 NumPy array representing the rotation matrix
+        position: The 1x3 NumPy array representing the position of the end-effector
+
+    Returns:
+        A 4x4 NumPy array representing the pose matrix
+    """
     M = np.eye(4)
     M[:3, :3] = rotation_matrix
     M[:3, 3] = position
@@ -66,9 +75,7 @@ def draw_heart(
     number_of_turns: int = 3,
     collect_data: bool = False,
 ):
-    """
-    Draw two hearts with Reachy's arms.
-    """
+    """Draw two hearts with Reachy's arms."""
     nbr_points = int(duration * freq)
     ys, zs = heart_curve(scale, nbr_points)
     dt = 1.0 / freq

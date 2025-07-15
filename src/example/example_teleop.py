@@ -1,3 +1,5 @@
+"""Pinocchio IK teleoperation motion replay example."""
+
 import json
 import time
 
@@ -13,6 +15,7 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
 
 def go_to_pose(reachy, pose: np.ndarray, arm: str):
+    """Send a Cartesian goal to the specified arm."""
     req = ArmCartesianGoal(
         id=getattr(reachy, arm)._part_id,
         goal_pose=Matrix4x4(data=pose.flatten().tolist()),
@@ -26,16 +29,18 @@ def go_to_pose(reachy, pose: np.ndarray, arm: str):
     stub.SendArmCartesianGoal(req)
 
 
-JSON_FILE = r"../../config_files/pytest_teleop.json"
+JSON_FILE = r"../config_files/pytest_teleop.json"
 
 
 def load_trajectory(path):
+    """Loading a joint trajectory path from teleoperation recording."""
     with open(path, "r") as f:
         data = json.load(f)
     return data["time"], data["l_arm"], data["r_arm"]
 
 
 def main():
+    """Main function."""
     control_frequency = 200.0
     dt = 1 / control_frequency
     reachy = ReachySDK(host="localhost")

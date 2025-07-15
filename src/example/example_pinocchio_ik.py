@@ -4,7 +4,7 @@ import numpy as np
 import pinocchio as pin
 from scipy.spatial.transform import Rotation as R
 
-from reachy2_placo_ik.pinocchio_ik import PinocchioIK
+from reachy2_qpik.pinocchio_ik import PinocchioIK
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-"""Pinocchio IK circle motion test."""
+"""Pinocchio IK circle motion example."""
 
 import csv
 import os
@@ -59,6 +59,7 @@ def make_circle(
     number_of_turns: int = 4,
     collect_data: bool = False,
 ) -> None:
+    """Draw a circle with Reachy's arms."""
     control_frequency = 120.0
     nbr_points = int(duration * control_frequency)
 
@@ -165,6 +166,7 @@ def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv")
 
 
 def main() -> None:
+    """Main function."""
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
 

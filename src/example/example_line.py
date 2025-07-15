@@ -1,4 +1,4 @@
-"""Pinocchio IK line motion test."""
+"""Pinocchio IK line motion example."""
 
 import csv
 import os
@@ -57,6 +57,7 @@ def make_line(
     duration: float = 4.0,
     collect_data: bool = False,
 ) -> None:
+    """Draw a line with Reachy's arms."""
     start_position = start_pose[0]
     end_position = end_pose[0]
     start_orientation = start_pose[1]
@@ -165,6 +166,7 @@ def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv")
 
 
 def main() -> None:
+    """Main function."""
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
 

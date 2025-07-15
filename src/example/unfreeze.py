@@ -14,7 +14,7 @@ from reachy2_sdk_api.kinematics_pb2 import Matrix4x4
 
 
 def main_test() -> None:
-    """Main test to unfreeze the robot."""
+    """Main test to unfreeze the robot when stuck."""
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
 

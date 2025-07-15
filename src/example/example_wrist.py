@@ -1,4 +1,4 @@
-"""Pinocchio IK wrist motion test."""
+"""Pinocchio IK wrist motion example."""
 
 import time
 
@@ -16,6 +16,15 @@ from scipy.spatial.transform import Slerp
 
 
 def make_homogenous_matrix_from_rotation_matrix(rotation_matrix: np.ndarray, position: np.ndarray) -> np.ndarray:
+    """Convert a 3x3 rotation matrix to a 4x4 homogenous matrix.
+
+    Args:
+        rotation_matrix: The 3x3 NumPy array representing the rotation matrix
+        position: The 1x3 NumPy array representing the position of the end-effector
+
+    Returns:
+        A 4x4 NumPy array representing the pose matrix
+    """
     M = np.eye(4)
     M[:3, :3] = rotation_matrix
     M[:3, 3] = position
@@ -23,6 +32,7 @@ def make_homogenous_matrix_from_rotation_matrix(rotation_matrix: np.ndarray, pos
 
 
 def go_to_pose(reachy: ReachySDK, pose: np.ndarray, arm: str) -> None:
+    """Send a Cartesian goal to the specified arm."""
     part = getattr(reachy, arm)
     req = ArmCartesianGoal(
         id=part._part_id,
@@ -44,6 +54,7 @@ def wrist_tilt_test(
     cycle_duration: float = 4.0,
     control_frequency: float = 120.0,
 ):
+    """Simple test for moving Reachy's wrists."""
     q0 = np.array([0, 10, -10, -90, 0, 0, 0])
     M_target_r = np.array(reachy.r_arm.forward_kinematics(q0.tolist()))
 

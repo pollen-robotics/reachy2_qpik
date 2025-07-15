@@ -1,4 +1,4 @@
-"""Pinocchio IK far pose test."""
+"""Pinocchio IK far pose example."""
 
 import time
 
@@ -49,6 +49,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str) -> No
 
 
 def main() -> None:
+    """Main function."""
     print("Trying to connect on localhost Reachy...")
     reachy = ReachySDK(host="localhost")
 

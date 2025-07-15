@@ -1,4 +1,4 @@
-"""Pinocchio IK motion tests."""
+"""Pinocchio IK motion examples."""
 
 import logging
 import time
@@ -37,7 +37,7 @@ def goto_to_point(
     degrees: bool = True,
     duration: float = 2.0,
 ) -> None:
-    """This function commands Reachy's right arm to move to the specified target position."""
+    """This function commands Reachy's arm to move to the specified target position."""
     rotation = R.from_euler("xyz", euler_angles, degrees=degrees).as_matrix()
     position = base_position.copy()
 
