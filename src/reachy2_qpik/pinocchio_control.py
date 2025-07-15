@@ -2,17 +2,20 @@
 
 import threading
 import time
+from collections import deque
 from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 
+from reachy2_qpik.utils import allow_multiturn, multiturn_safety_check, savitzky_golay
+
 
 class PinocchioControl:
-    """Pinocchio Tracking Control for Reachy2."""
+    """Pinocchio Pose Tracking Control for Reachy2."""
 
-    def __init__(self, node, ik_solver, dt: float = 1 / 500):
+    def __init__(self, node, ik_solver, dt: float = 1 / 500, sg_window: int = 11, sg_order: int = 3):
         """Initialize the class."""
         self.node = node
         self.dt = dt  # [s]
@@ -40,6 +43,21 @@ class PinocchioControl:
 
         self.ik_solver = ik_solver
         self.ik_step = ik_solver["r_arm"].dt  # [s]
+
+        self.running = True
+        self.emergency_state = ""
+
+        self.sg_window = sg_window
+        self.sg_order = sg_order
+        self.sg_half = (sg_window - 1) // 2
+
+        self.vel_buffers: dict[str, list[deque[np.float64]]] = {
+            "l_arm": [deque(maxlen=sg_window) for _ in range(7)],
+            "r_arm": [deque(maxlen=sg_window) for _ in range(7)],
+        }
+
+        self.acc_step_test = True
+        self.step_start_time = None
 
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
@@ -77,7 +95,7 @@ class PinocchioControl:
         start_time = 0
         loop_count = 0
 
-        while True:
+        while self.running:
             t = time.time()
             loop_count += 1
             for arm in ["l_arm", "r_arm"]:
@@ -90,6 +108,18 @@ class PinocchioControl:
                     continue
 
                 q_dot_current = (q_current - q_previous) / self.ik_step
+
+                buffer = self.vel_buffers[arm]
+                for j in range(7):
+                    buffer[j].append(q_dot_current[j])
+
+                if len(buffer[0]) == self.sg_window:
+                    q_dot_smooth = np.zeros(7)
+                    for j in range(7):
+                        arr = np.array(buffer[j])
+                        smooth_sig = savitzky_golay(arr, window_size=self.sg_window, order=self.sg_order)
+                        q_dot_smooth[j] = smooth_sig[self.sg_half]
+                    q_dot_current = q_dot_smooth
 
                 target_copy = target.copy()
 
@@ -107,11 +137,28 @@ class PinocchioControl:
 
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
-                with self.lock:
-                    self.q_previous[arm] = q_current
-                    self.q_present[arm] = q_updated
+                q_updated = allow_multiturn(q_updated, q_current)
 
-                self.node.publish_joint_commands(arm, q_updated)
+                q_updated, emergency, self.emergency_state = multiturn_safety_check(
+                    q_updated, 2 * np.pi, 2 * np.pi, 2 * np.pi, self.emergency_state
+                )
+
+                if emergency:
+                    print(f"[EMERGENCY STOP] {arm} joint limits reached.")
+                    print(self.emergency_state)
+                    self.running = False
+                    self.target_pose["l_arm"] = None
+                    self.target_pose["r_arm"] = None
+                    self.node.publish_joint_commands("l_arm", self.q_present["l_arm"])
+                    self.node.publish_joint_commands("r_arm", self.q_present["r_arm"])
+                    break
+
+                else:
+                    with self.lock:
+                        self.q_previous[arm] = q_current
+                        self.q_present[arm] = q_updated
+
+                    self.node.publish_joint_commands(arm, q_updated)
 
             time.sleep(max(self.dt - (time.time() - t), 0.0))
 
