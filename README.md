@@ -34,7 +34,7 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 
 ## Installation
 
-Dependencies are detailed in the `setup.cfg` file. To install this package locally, run:
+Dependencies are detailed in the [`setup.cfg`](./setup.cfg) file. To install this package locally, run:
 
 ```bash
 pip install -e .[dev]
