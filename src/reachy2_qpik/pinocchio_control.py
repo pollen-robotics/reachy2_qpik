@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 
-from reachy2_qpik.utils import allow_multiturn, multiturn_safety_check, savitzky_golay
+from reachy2_qpik.utils import angle_diff, multiturn_safety_check, savitzky_golay
 
 
 class PinocchioControl:
@@ -22,6 +22,11 @@ class PinocchioControl:
         self.lock = threading.Lock()
 
         self.q_present = {
+            "l_arm": np.zeros(7),  # [rad]
+            "r_arm": np.zeros(7),  # [rad]
+        }
+
+        self.q_unwrapped = {
             "l_arm": np.zeros(7),  # [rad]
             "r_arm": np.zeros(7),  # [rad]
         }
@@ -55,9 +60,6 @@ class PinocchioControl:
             "l_arm": [deque(maxlen=sg_window) for _ in range(7)],
             "r_arm": [deque(maxlen=sg_window) for _ in range(7)],
         }
-
-        self.acc_step_test = True
-        self.step_start_time = None
 
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
@@ -137,10 +139,11 @@ class PinocchioControl:
 
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
-                q_updated = allow_multiturn(q_updated, q_current)
+                diffs = np.array([angle_diff(q_updated[i], q_current[i]) for i in range(7)])
+                self.q_unwrapped[arm] += diffs
 
-                q_updated, emergency, self.emergency_state = multiturn_safety_check(
-                    q_updated, 2 * np.pi, 2 * np.pi, 2 * np.pi, self.emergency_state
+                self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
+                    self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
                 )
 
                 if emergency:

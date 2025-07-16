@@ -81,23 +81,11 @@ def angle_diff(a: float, b: float) -> float:
     return d
 
 
-def allow_multiturn(new_joints: list[float], prev_joints: list[float]) -> list[float]:
-    """This function will always guarantee that the joint takes the shortest path to the new position.
-
-    The practical effect is that it will allow the joint to rotate more than 2pi if it is the shortest path.
-    """
-    new_joints = copy.deepcopy(new_joints)
-    for i in range(len(new_joints)):
-        diff = angle_diff(new_joints[i], prev_joints[i])
-        new_joints[i] = prev_joints[i] + diff
-    return new_joints
-
-
 def multiturn_safety_check(
     joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float, emergency_state: str
 ) -> tuple[list[float], bool, str]:
     """Limit the number of turns allowed on the joints."""
-    # print(f"{joints[0]:.2f}")
+    print(f"[{joints[1]:.2f},{joints[2]:.2f},{joints[6]:.2f}]")
     joints = copy.deepcopy(joints)
     emergency_stop = False
     # Shoulder pitch

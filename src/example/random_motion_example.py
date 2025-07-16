@@ -103,7 +103,7 @@ def random_trajectory(reachy: ReachySDK, debug_pose: bool = False, bypass: bool 
     t_init = time.time()
     while True:
         t = time.time()
-        t_sine = t - t_init + 11
+        t_sine = t - t_init + 100
         if not debug_pose:
             r_q = [q0[i] + q_amps[i] * np.sin(2 * np.pi * freq[i] * t_sine) for i in range(7)]  # [rad]
         else:
