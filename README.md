@@ -25,7 +25,7 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 
 1. **Quadratic Programming Inverse Kinematics:**
    * Solves inverse kinematics with [quadratic programming](https://scaron.info/blog/quadratic-programming-in-python.html) by minimizing joint accelerations under task-space constraints.
-   * Handles accelerations, speed and joints limits using inequality constraints.
+   * Handles accelerations, speed and joints limits.
    * Robustness against singularities — a fancy way of saying we can avoid unstable joint configurations.
 2. **Task-Space Control Algorithm:**
    * Pose tracking suitable for teleoperation, ensures joint-space continuity.
