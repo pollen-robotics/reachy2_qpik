@@ -221,6 +221,8 @@ class PinocchioIK:
             h = np.hstack([self.q_dot_max, -self.q_dot_min])
 
             q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
+            if q_dot is None:
+                q_dot = np.zeros_like(q)
             q = pin.integrate(self.model, q, q_dot * self.dt)
 
             if not success:
@@ -278,6 +280,8 @@ class PinocchioIK:
         h = np.hstack([self.q_dot_max, -self.q_dot_min])
 
         q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
+        if q_dot is None:
+            q_dot = np.zeros_like(q)
 
         return q_dot
 
@@ -286,7 +290,7 @@ class PinocchioIK:
         goal_pose: npt.NDArray[np.float64],
         current_joints: npt.NDArray[np.float64],
         previous_joints: npt.NDArray[np.float64],
-    ) -> tuple[npt.NDArray[np.float64], bool, str]:
+    ) -> npt.NDArray[np.float64]:
         """Compute one IK acceleration step."""
         q_dot = (current_joints - previous_joints) / self.dt  # [rad.s⁻¹]
 
@@ -334,5 +338,7 @@ class PinocchioIK:
         h = np.hstack([h_dyn, h_pos])
 
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
+        if q_ddot is None:
+            q_ddot = np.zeros_like(q)
 
         return q_ddot

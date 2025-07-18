@@ -61,7 +61,7 @@ def symmetrical_pose_flip(T: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]
     return T_flip
 
 
-@pytest.mark.cicd
+@pytest.mark.online
 def test_reachable_poses() -> None:
     reachy = ReachySDK(host="localhost")
     time.sleep(1.0)
@@ -105,7 +105,7 @@ def test_reachable_poses() -> None:
     assert True
 
 
-@pytest.mark.cicd
+@pytest.mark.online
 def test_random_teleop_poses():
     reachy = ReachySDK(host="localhost")
     time.sleep(1.0)
@@ -144,7 +144,7 @@ def test_random_teleop_poses():
     assert True
 
 
-@pytest.mark.cicd
+@pytest.mark.online
 def test_circle() -> None:
     reachy = ReachySDK(host="localhost")
     time.sleep(1.0)
@@ -193,7 +193,7 @@ def test_circle() -> None:
     l_previous_joints = reachy.l_arm.get_current_positions()
     r_previous_joints = reachy.r_arm.get_current_positions()
 
-    for i in range(number_of_turns):
+    for _ in range(number_of_turns):
         for j in range(nbr_points):
             t = time.time()
             position = np.array([X[j], Y_r[j], Z[j]])
@@ -228,7 +228,7 @@ def test_circle() -> None:
     assert True
 
 
-@pytest.mark.cicd
+@pytest.mark.online
 def test_random_trajectory() -> None:
     reachy = ReachySDK(host="localhost")
     time.sleep(1.0)

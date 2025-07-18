@@ -4,6 +4,7 @@ import copy
 import math
 
 import numpy as np
+import numpy.typing as npt
 
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
@@ -82,8 +83,12 @@ def angle_diff(a: float, b: float) -> float:
 
 
 def multiturn_safety_check(
-    joints: list[float], shoulder_pitch_limit: float, elbow_yaw_limit: float, wrist_yaw_limit: float, emergency_state: str
-) -> tuple[list[float], bool, str]:
+    joints: npt.NDArray[np.float64],
+    shoulder_pitch_limit: float,
+    elbow_yaw_limit: float,
+    wrist_yaw_limit: float,
+    emergency_state: str,
+) -> tuple[npt.NDArray[np.float64], bool, str]:
     """Limit the number of turns allowed on the joints."""
     print(f"[{joints[1]:.2f},{joints[2]:.2f},{joints[6]:.2f}]")
     joints = copy.deepcopy(joints)
@@ -115,4 +120,4 @@ def multiturn_safety_check(
         joints[6] = -wrist_yaw_limit
         emergency_state += "\n" + "EMERGENCY STOP: wrist yaw limit reached"
         emergency_stop = True
-    return joints, emergency_stop, emergency_state
+    return np.array(joints), emergency_stop, emergency_state
