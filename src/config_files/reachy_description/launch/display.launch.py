@@ -14,6 +14,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    """Generate Reachy launch description."""
     description_package_arg = DeclareLaunchArgument(
         "description_package",
         default_value="reachy_description",

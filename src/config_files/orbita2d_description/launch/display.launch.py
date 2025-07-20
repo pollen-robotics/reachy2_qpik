@@ -14,7 +14,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    "Generate Orbita 2D launch description."
+    """Generate Orbita 2D launch description."""
     description_package_arg = DeclareLaunchArgument(
         "description_package",
         default_value="orbita2d_description",

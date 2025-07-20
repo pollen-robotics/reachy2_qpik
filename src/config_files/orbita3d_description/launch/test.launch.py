@@ -21,7 +21,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def launch_setup(context, *args, **kwargs):
-    "Launch Orbita 3D Setup."
+    """Launch Orbita 3D Setup."""
     # perform(context) returns arg as a string, hence the conversion
     # var_rl is a ROS launch type object
     # var_py is a converted version, python friendly
@@ -50,9 +50,7 @@ def launch_setup(context, *args, **kwargs):
             *(
                 (" ", "use_fake_hardware:=true", " ")
                 if fake_py
-                else (" ", "use_fake_hardware:=true use_gazebo:=true", " ")
-                if gazebo_py
-                else (" ",)
+                else (" ", "use_fake_hardware:=true use_gazebo:=true", " ") if gazebo_py else (" ",)
             ),
             *((" ", 'config_file:="{}"'.format(config_file_py), " ") if has_config else (" ",)),
         ]
@@ -166,6 +164,7 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
+    """Generate Orbita 3D launch description."""
     return LaunchDescription(
         [
             # Needed by camera publisher - See: https://github.com/ros2/rosidl_python/issues/79

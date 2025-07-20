@@ -161,6 +161,7 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
+    """Generate Orbita 2D launch description."""
     return LaunchDescription(
         [
             # Needed by camera publisher - See: https://github.com/ros2/rosidl_python/issues/79
