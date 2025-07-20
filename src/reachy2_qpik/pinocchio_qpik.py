@@ -35,18 +35,15 @@ class PinocchioIK:
         self.arm = arm
         self.ee_frame = f"{arm}_tip"
         self.ee_frame_id = self.model.getFrameId(self.ee_frame)
-        self.joint_id = self.model.frames[self.ee_frame_id].parent
-
+        self.joint_id = self.model.frames[self.ee_frame_id].parentJoint
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.lambda_v = 1e-6
-        self.lambda_a = 1e-8
         self.Kp = 0.4  # Proportional gain
 
-        self.Kpc = 8e3
-        self.Kdc = 3.5 * np.sqrt(self.Kpc)
-        self.Kpa = 8e3
-        self.Kda = 3 * np.sqrt(self.Kpa)
+        self.Kpc = 5000
+        self.Kdc = 2 * np.sqrt(self.Kpc)
+        self.Kpa = 15
+        self.Kda = 2 * np.sqrt(self.Kpa)
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
@@ -79,7 +76,10 @@ class PinocchioIK:
             #     -20.753570774218765,
             # ]
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
-        self.alpha = 1e-9
+
+        self.lambda_v = 1e-6
+        self.lambda_a = 1e-8
+        self.alpha = 1e-8
         self.beta = 1e-2
 
     def default_locked_joints(self, arm: str) -> list[str]:
@@ -320,7 +320,7 @@ class PinocchioIK:
         q_ddot_posture = self.Kpa * (self.q0_pref - q) - self.Kda * q_dot  # [rad.s⁻²]
 
         P = J.T @ self.W @ J + self.lambda_a * np.eye(self.nv) + self.beta * np.eye(self.nv)
-        r = -2 * J.T @ self.W @ e_a + -self.beta * q_ddot_posture
+        r = -(J.T @ self.W @ e_a) + -(self.beta * q_ddot_posture)
 
         q_ddot_max = (self.q_dot_max - q_dot) / (self.K_lim * self.dt)  # [rad.s⁻²]
         q_ddot_min = (self.q_dot_min - q_dot) / (self.K_lim * self.dt)  # [rad.s⁻²]
