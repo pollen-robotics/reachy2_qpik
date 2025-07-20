@@ -59,13 +59,13 @@ To ensure everything is functionning correctly, you can run unit tests. The test
 Example:
 
 ```bash
-pytest -m cicd
+pytest -m online
 ```
 
 or:
 
 ```bash
-python3 -m pytest -m cicd
+python3 -m pytest -m online
 ```
 
 ## URDF
