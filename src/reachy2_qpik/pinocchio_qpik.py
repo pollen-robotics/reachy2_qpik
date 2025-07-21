@@ -35,7 +35,7 @@ class PinocchioIK:
         self.arm = arm
         self.ee_frame = f"{arm}_tip"
         self.ee_frame_id = self.model.getFrameId(self.ee_frame)
-        self.joint_id = self.model.frames[self.ee_frame_id].parentJoint
+        self.joint_id = self.model.frames[self.ee_frame_id].parent
         self.IT_MAX = 1  # 00
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.Kp = 0.4  # Proportional gain

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
+import pycapacity as pycap
 
 from reachy2_qpik.pinocchio_qpik import PinocchioIK
 from reachy2_qpik.utils import savitzky_golay
@@ -41,6 +42,7 @@ def unit_step(step_amp: float, duration: float, t0: float):
     joint_positions = np.zeros((steps, pinik.nv))
     joint_speeds = np.zeros((steps, pinik.nv))
     joint_accels = np.zeros((steps, pinik.nv))
+    acc_max = np.zeros(steps)
 
     q0 = np.deg2rad([0, 0, -10, -90, 0, 0, 0])  # Elbow 90°
     pin.framesForwardKinematics(pinik.model, pinik.data, q0)
@@ -55,6 +57,9 @@ def unit_step(step_amp: float, duration: float, t0: float):
 
     q_prev = q0.copy()
     q_current = q0.copy()
+
+    tau_max = np.ones(pinik.nv) * 15.0
+    tau_min = -tau_max
 
     # Control loop
     for i in range(steps):
@@ -88,9 +93,23 @@ def unit_step(step_amp: float, duration: float, t0: float):
 
         pin.framesForwardKinematics(pinik.model, pinik.data, q_updated)
         pin.updateFramePlacements(pinik.model, pinik.data)
-        ee = pinik.data.oMf[pinik.ee_frame_id]
-        cartesian_list[i] = ee.translation[0] - ee_baselink.translation[0]
 
+        J_pos = pin.computeFrameJacobian(
+            pinik.model, pinik.data, q_updated, pinik.model.getFrameId(pinik.ee_frame), pin.ReferenceFrame.LOCAL
+        )[:3, :]
+        M = pin.crba(pinik.model, pinik.data, q_updated)
+        opt = {"calculate_faces": True}
+
+        ee = pinik.data.oMf[pinik.ee_frame_id]
+        tee = ee.translation
+        Ree = ee.rotation
+
+        cartesian_list[i] = tee[0] - ee_baselink.translation[0]
+        acc_poly = pycap.robot.acceleration_polytope(J_pos, M, tau_max, tau_min, options=opt)
+        acc_vertices = (Ree @ acc_poly.vertices).T + tee
+        amax = np.max(acc_vertices[:, 0])
+
+        acc_max[:] = amax
         joint_positions[i, :] = q_current
         joint_speeds[i, :] = q_dot_current
         joint_accels[i, :] = q_ddot
@@ -98,7 +117,7 @@ def unit_step(step_amp: float, duration: float, t0: float):
         q_prev[:] = q_current
         q_current[:] = q_updated
 
-    return t_list, cartesian_list, step_input, joint_positions, joint_speeds, joint_accels
+    return t_list, cartesian_list, step_input, joint_positions, joint_speeds, joint_accels, acc_max
 
 
 def plot_results(
@@ -109,6 +128,7 @@ def plot_results(
     q_pos: npt.NDArray[np.float64],
     q_vel: npt.NDArray[np.float64],
     q_acc: npt.NDArray[np.float64],
+    acc_max: npt.NDArray[np.float64],
     setting_time: float,
 ):
     """Display the results of the unit_step."""
@@ -144,6 +164,8 @@ def plot_results(
         ax = axis[1, 1]
         for j in range(q_acc.shape[1]):
             ax.plot(t, q_acc[:, j], label=f"$q̈_{j}$")
+        ax.plot(t, acc_max, "r--", label="$q̈_{\\max}$")
+        ax.plot(t, -acc_max, "r--")
         ax.set_title("Joint Accelerations")
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Acceleration (rad.s⁻²)")
@@ -173,6 +195,8 @@ def plot_results(
         elif mode == 3:
             for j in range(q_acc.shape[1]):
                 ax.plot(t, q_acc[:, j], label=f"q̈{j}")
+            ax.plot(t, acc_max, "r--", label="$q̈_{\\max}$")
+            ax.plot(t, -acc_max, "r--")
             ax.set_title("Joint Accelerations")
             ax.set_ylabel("Acceleration (rad.s⁻²)")
         else:
@@ -212,7 +236,7 @@ def main():
     t0 = 0.2
     band = 0.05 * step_amp
 
-    t, cart, step_in, q_pos, q_vel, q_acc = unit_step(step_amp, duration, t0)
+    t, cart, step_in, q_pos, q_vel, q_acc, acc_max = unit_step(step_amp, duration, t0)
 
     within_band = np.logical_and(cart >= step_amp - band, cart <= step_amp + band)
 
@@ -221,7 +245,7 @@ def main():
         if all(within_band[i:]):
             setting_time = t[i] - t0
             break
-    plot_results(mode, t, cart, step_in, q_pos, q_vel, q_acc, setting_time)
+    plot_results(mode, t, cart, step_in, q_pos, q_vel, q_acc, acc_max, setting_time)
 
 
 if __name__ == "__main__":
