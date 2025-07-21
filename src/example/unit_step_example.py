@@ -28,8 +28,8 @@ def unit_step(step_amp: float, duration: float, t0: float):
     dt = pinik.dt
     steps = int(duration / dt)
 
-    sg_window = 11
-    sg_order = 3
+    sg_window = 51
+    sg_order = 5
     sg_half = (sg_window - 1) // 2
 
     i_step_start = int(t0 / dt)
@@ -232,7 +232,7 @@ def main():
 
     # Parameters
     step_amp = 0.01
-    duration = 1.0
+    duration = 0.7
     t0 = 0.2
     band = 0.05 * step_amp
 

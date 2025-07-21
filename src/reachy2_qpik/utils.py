@@ -90,7 +90,7 @@ def multiturn_safety_check(
     emergency_state: str,
 ) -> tuple[npt.NDArray[np.float64], bool, str]:
     """Limit the number of turns allowed on the joints."""
-    print(f"[{joints[1]:.2f},{joints[2]:.2f},{joints[6]:.2f}]")
+    # print(f"[{joints[1]:.2f},{joints[2]:.2f},{joints[6]:.2f}]")
     joints = copy.deepcopy(joints)
     emergency_stop = False
     # Shoulder pitch

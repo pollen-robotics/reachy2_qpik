@@ -40,7 +40,7 @@ class PinocchioIK:
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.Kp = 0.4  # Proportional gain
 
-        self.Kpc = 5000
+        self.Kpc = 6500
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kpa = 15
         self.Kda = 2 * np.sqrt(self.Kpa)
