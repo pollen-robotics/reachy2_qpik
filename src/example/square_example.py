@@ -93,8 +93,8 @@ def make_rectangle(
     B: npt.NDArray[np.float64],
     C: npt.NDArray[np.float64],
     D: npt.NDArray[np.float64],
-    duration: float = 4.0,
-    number_of_turns: int = 250,
+    duration: float = 10.0,
+    number_of_turns: int = 2,
 ) -> None:
     """Draw a rectangle with Reachy's arms."""
     orientation = [0, -np.pi / 2, 0]
@@ -118,10 +118,10 @@ def main() -> None:
     reachy.turn_on()
 
     print("Test - Making a square")
-    A = np.array([0.4, -0.4, -0.3])
-    B = np.array([0.4, -0.4, -0.1])
-    C = np.array([0.4, -0.1, -0.1])
-    D = np.array([0.4, -0.1, -0.3])
+    A = np.array([0.4, -0.35, -0.4])
+    B = np.array([0.4, -0.35, -0.15])
+    C = np.array([0.4, -0.2, -0.15])
+    D = np.array([0.4, -0.2, -0.4])
     make_rectangle(reachy, A, B, C, D)
 
     time.sleep(2)

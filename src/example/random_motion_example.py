@@ -175,10 +175,13 @@ def check_precision_and_symmetry(
     """Display metrics (precision, symmetry, continuity, etc.)."""
     is_real_pose_correct = True
 
-    l_mod = np.array([ik_l[0], -ik_l[1], -ik_l[2], ik_l[3], -ik_l[4], ik_l[5], -ik_l[6]])
+    l_joints = reachy.l_arm.get_current_positions()
+    r_joints = reachy.r_arm.get_current_positions()
+
+    l_flip = np.array([l_joints[0], -l_joints[1], -l_joints[2], l_joints[3], -l_joints[4], l_joints[5], -l_joints[6]])
 
     # calculate l2 distance between r_joints and l_mod
-    l2_dist = l2_error(ik_r, l_mod)
+    l2_dist = l2_error(l_flip, np.array(r_joints))
     print(f"l2_dist: {l2_dist:.8f}")
     # print(ik_r)
     # print(l_mod)
@@ -210,12 +213,14 @@ def check_precision_and_symmetry(
             print(f"l_real_pose {l_real_pose.tolist()}")
             is_real_pose_correct = False
 
-    if l2_dist < 0.1:
+    if l2_dist < 100:
         print("Symmetry OK")
+    elif 101 <= l2_dist < 500:
+        print("Symmetry Warning")
     else:
         print("Symmetry NOT OK!!")
-        print(f"ik_r {np.round(ik_r, 3).tolist()}")
-        print(f"ik_l_sym {np.round(l_mod, 3).tolist()}")
+        print(f"ik_r {np.round(r_joints, 3).tolist()}")
+        print(f"ik_l_sym {np.round(l_flip, 3).tolist()}")
         print(f"M_r {M_r.tolist()}")
         print(f"M_l {M_l.tolist()}")
         is_real_pose_correct = False

@@ -136,8 +136,10 @@ def main():
         angle_radius_deg=2.5,
     )
 
+    print("===== Computed Metrics =====")
     for k, v in results.items():
-        print(f"{k}: {v:.4f}")
+        print(f"|| {k}: {v:.4f}")
+    print("="*28)
 
     reachy.disconnect()
 
