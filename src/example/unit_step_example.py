@@ -20,16 +20,14 @@ from reachy2_qpik.pinocchio_qpik import PinocchioIK
 from reachy2_qpik.utils import savitzky_golay
 
 
-def unit_step(step_amp: float, duration: float, t0: float):
+def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
     """Position Unit Step simulation."""
     # Parameters
-    urdf = r"../config_files/reachy.urdf"
-    pinik = PinocchioIK(urdf_path=urdf, arm="l_arm")
     dt = pinik.dt
     steps = int(duration / dt)
 
-    sg_window = 51
-    sg_order = 5
+    sg_window = 11
+    sg_order = 3
     sg_half = (sg_window - 1) // 2
 
     i_step_start = int(t0 / dt)
@@ -86,7 +84,7 @@ def unit_step(step_amp: float, duration: float, t0: float):
             for j in range(pinik.nv):
                 arr = np.array(buffer[j])
                 q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order)[sg_half]
-            q_dot_current = q_dot_current
+            q_dot_current = q_dot_smooth
 
         q_dot = q_dot_current + q_ddot * dt
         q_updated = pin.integrate(pinik.model, q_current, q_dot * dt)
@@ -121,6 +119,7 @@ def unit_step(step_amp: float, duration: float, t0: float):
 
 
 def plot_results(
+    pinik: PinocchioIK,
     mode: int,
     t: npt.NDArray[np.float64],
     cart_list: npt.NDArray[np.float64],
@@ -140,6 +139,29 @@ def plot_results(
         ax.set_title(f"Cartesian Unit Step - 5% Setting time: {setting_time:.4f}s")
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("x (m)")
+
+        ax.text(
+            0.97,
+            0.50,
+            "Cartesian gains:\n" f"$K_{{pc}}$ = {pinik.Kpc}\n" f"$K_{{dc}}$ = {pinik.Kdc:.1f}",
+            transform=ax.transAxes,
+            fontsize=10,
+            va="top",
+            ha="right",
+            bbox=dict(boxstyle="round", facecolor="white", edgecolor="black"),
+        )
+
+        ax.text(
+            0.97,
+            0.25,
+            "Joint‑space gains:\n" f"$K_{{pa}}$ = {pinik.Kpa}\n" f"$K_{{da}}$ = {pinik.Kda:.1f}",
+            transform=ax.transAxes,
+            fontsize=10,
+            va="top",
+            ha="right",
+            bbox=dict(boxstyle="round", facecolor="white", edgecolor="black"),
+        )
+
         ax.grid(True)
         ax.legend()
 
@@ -182,6 +204,7 @@ def plot_results(
             ax.plot(t, step_in, "r--", label="unit step")
             ax.set_title(f"Cartesian Unit Step - 5% Setting time: {setting_time:.4f}s")
             ax.set_ylabel("x (m)")
+
         elif mode == 1:
             for j in range(q_pos.shape[1]):
                 ax.plot(t, q_pos[:, j], label=f"$q_{j}$")
@@ -203,6 +226,27 @@ def plot_results(
             raise ValueError("mode must be in [0-4]")
 
         ax.set_xlabel("Time (s)")
+        ax.text(
+            0.99,
+            0.22,
+            "Cartesian gains:\n" f"$K_{{pc}}$ = {pinik.Kpc}\n" f"$K_{{dc}}$ = {pinik.Kdc:.1f}",
+            transform=ax.transAxes,
+            fontsize=11,
+            va="top",
+            ha="right",
+            bbox=dict(boxstyle="round", facecolor="white", edgecolor="black"),
+        )
+
+        ax.text(
+            0.99,
+            0.1,
+            "Joint‑space gains:\n" f"$K_{{pa}}$ = {pinik.Kpa}\n" f"$K_{{da}}$ = {pinik.Kda:.1f}",
+            transform=ax.transAxes,
+            fontsize=11,
+            va="top",
+            ha="right",
+            bbox=dict(boxstyle="round", facecolor="white", edgecolor="black"),
+        )
         ax.grid(True)
         ax.legend(loc="best", fontsize="small", ncol=2)
         plt.tight_layout()
@@ -236,7 +280,10 @@ def main():
     t0 = 0.2
     band = 0.05 * step_amp
 
-    t, cart, step_in, q_pos, q_vel, q_acc, acc_max = unit_step(step_amp, duration, t0)
+    urdf = r"../config_files/reachy.urdf"
+    pinik = PinocchioIK(urdf_path=urdf, arm="l_arm")
+
+    t, cart, step_in, q_pos, q_vel, q_acc, acc_max = unit_step(pinik, step_amp, duration, t0)
 
     within_band = np.logical_and(cart >= step_amp - band, cart <= step_amp + band)
 
@@ -245,7 +292,7 @@ def main():
         if all(within_band[i:]):
             setting_time = t[i] - t0
             break
-    plot_results(mode, t, cart, step_in, q_pos, q_vel, q_acc, acc_max, setting_time)
+    plot_results(pinik, mode, t, cart, step_in, q_pos, q_vel, q_acc, acc_max, setting_time)
 
 
 if __name__ == "__main__":
