@@ -9,9 +9,9 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 ![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/FabienDanieau/58642e8fe4589e710e26627e39ff92d7/raw/covbadge.json)
 ![Docs](https://github.com/pollen-robotics/python-template/actions/workflows/docs.yml/badge.svg)
 
-<p align="center">
-  <img width="346" height="461" alt="image" src="https://github.com/user-attachments/assets/55150e89-ed1f-463a-9e58-bae6bad20415" />
 
+<p align="center">
+  <img width="346" height="461" alt="Reachy 2 Heart GIF" src="https://github.com/user-attachments/assets/d1e04943-2540-4205-8c46-cd27da5b474a"/>
 </p>
 
 ## Table of contents
