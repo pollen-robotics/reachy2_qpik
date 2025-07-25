@@ -39,5 +39,4 @@
 *.vis lfs
 *.db lfs
 *.ply lfs
-*.ipynb -linguist-detectable
 *.ipynb -linguist-vendored
