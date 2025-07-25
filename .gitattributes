@@ -39,4 +39,4 @@
 *.vis lfs
 *.db lfs
 *.ply lfs
-*.ipynb -linguist-vendored=false
+*.ipynb linguist-detectable=false
