@@ -139,7 +139,7 @@ def main():
     print("===== Computed Metrics =====")
     for k, v in results.items():
         print(f"|| {k}: {v:.4f}")
-    print("="*28)
+    print("=" * 28)
 
     reachy.disconnect()
 

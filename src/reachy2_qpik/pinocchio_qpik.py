@@ -41,8 +41,8 @@ class PinocchioIK:
         self.Kp = 0.4  # Proportional gain
 
         self.Kpc = 6500
-        self.Kdc = 2 * np.sqrt(self.Kpc)
-        self.Kpa = 15
+        self.Kdc = 2.5 * np.sqrt(self.Kpc)
+        self.Kpa = 150
         self.Kda = 2 * np.sqrt(self.Kpa)
         self.dt = 0.0025  # Time step
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
@@ -238,52 +238,6 @@ class PinocchioIK:
         # print(final_ee_pose)
 
         return q, success, state
-
-    def compute_velocity(
-        self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
-        """Compute one IK velocity step."""
-        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
-        R_goal = goal_pose[:3, :3]
-        p_goal = goal_pose[:3, 3]
-        oMdes_torso = pin.SE3(R_goal, p_goal)
-
-        q = current_joints.copy()  # [rad]
-        pin.framesForwardKinematics(self.model, self.data, q)
-        pin.updateFramePlacements(self.model, self.data)
-
-        T_baselink_torso = self.data.oMf[self.model.getFrameId("torso")].copy()
-        oMdes = T_baselink_torso * oMdes_torso
-
-        current_ee = self.data.oMf[self.ee_frame_id]
-        iMd = current_ee.actInv(oMdes)
-        err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
-
-        v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
-
-        # v_lim_upper = (self.q_max - q) / (self.K_lim * self.dt)
-        # v_lim_lower = (self.q_min - q) / (self.K_lim * self.dt)
-
-        # v_upper = np.minimum(self.v_max, v_lim_upper)
-        # v_lower = np.maximum(self.q_dot_min, v_lim_lower)
-
-        q_dot_posture = (self.q0_pref - q) / self.dt
-
-        J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
-
-        # QP terms
-        P = J.T @ self.W @ J + self.lambda_v * np.eye(self.nv) + self.alpha * np.eye(self.nv)
-        r = -J.T @ self.W @ v + -self.alpha * q_dot_posture
-
-        G = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
-        # h = np.hstack([v_upper, -v_lower])
-        h = np.hstack([self.q_dot_max, -self.q_dot_min])
-
-        q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
-        if q_dot is None:
-            q_dot = np.zeros_like(q)
-
-        return q_dot
 
     def compute_acceleration(
         self,
