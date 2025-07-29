@@ -68,10 +68,6 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
             goal = goal_step
             step_input[i] = step_amp
 
-        q_ddot = pinik.compute_acceleration(goal, q_current, q_prev)
-        if q_ddot is None:
-            q_ddot = np.zeros_like(q_current)
-
         if i == 0:
             q_dot_current = np.zeros_like(q_current)
         else:
@@ -85,6 +81,10 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
                 arr = np.array(buffer[j])
                 q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order)[sg_half]
             q_dot_current = q_dot_smooth
+
+        q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
+        if q_ddot is None:
+            q_ddot = np.zeros_like(q_current)
 
         q_dot = q_dot_current + q_ddot * dt
         q_updated = pin.integrate(pinik.model, q_current, q_dot * dt)

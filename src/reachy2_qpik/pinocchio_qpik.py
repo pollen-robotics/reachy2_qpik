@@ -243,11 +243,9 @@ class PinocchioIK:
         self,
         goal_pose: npt.NDArray[np.float64],
         current_joints: npt.NDArray[np.float64],
-        previous_joints: npt.NDArray[np.float64],
+        q_dot: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Compute one IK acceleration step."""
-        q_dot = (current_joints - previous_joints) / self.dt  # [rad.s⁻¹]
-
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
         R_goal, p_goal = goal_pose[:3, :3], goal_pose[:3, 3]
         oMdes_tors = pin.SE3(R_goal, p_goal)

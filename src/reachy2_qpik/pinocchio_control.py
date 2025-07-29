@@ -125,7 +125,7 @@ class PinocchioControl:
 
                 target_copy = target.copy()
 
-                q_ddot = self.tick_control(arm, q_current, q_previous, target_copy)  # [rad.s⁻²]
+                q_ddot = self.tick_control(arm, q_current, q_dot_current, target_copy)  # [rad.s⁻²]
 
                 q_dot = q_dot_current + q_ddot * self.ik_step  # [rad.s⁻¹]
 
@@ -175,12 +175,12 @@ class PinocchioControl:
         self,
         arm: str,
         q_current: npt.NDArray[np.float64],
-        q_previous: npt.NDArray[np.float64],
+        q_dot: npt.NDArray[np.float64],
         target_pose: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Update the joint velocities at each tick."""
         try:
-            q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_previous)
+            q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_dot)
 
         except Exception as e:
             print(f"Error in QP computation: {e}")
