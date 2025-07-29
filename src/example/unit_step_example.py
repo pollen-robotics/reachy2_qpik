@@ -27,7 +27,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
     steps = int(duration / dt)
 
     sg_window = 11
-    sg_order = 3
+    sg_order = 4
     sg_half = (sg_window - 1) // 2
 
     i_step_start = int(t0 / dt)
@@ -55,6 +55,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
 
     q_prev = q0.copy()
     q_current = q0.copy()
+    q_dot_current = np.zeros_like(q_current)
 
     tau_max = np.ones(pinik.nv) * 15.0
     tau_min = -tau_max
@@ -73,14 +74,23 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
         else:
             q_dot_current = (q_current - q_prev) / dt
 
-        for j in range(pinik.nv):
-            buffer[j].append(q_dot_current[j])
-        if len(buffer[0]) == sg_window:
-            q_dot_smooth = np.zeros_like(q_dot_current)
-            for j in range(pinik.nv):
-                arr = np.array(buffer[j])
-                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order)[sg_half]
-            q_dot_current = q_dot_smooth
+        # for j in range(pinik.nv):
+        #     buffer[j].append(q_dot_current[j])
+        # if len(buffer[0]) == sg_window:
+        #     q_dot_smooth = np.zeros_like(q_dot_current)
+        #     for j in range(pinik.nv):
+        #         arr = np.array(buffer[j])
+        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=dt)[sg_half]
+        #     q_dot_current = q_dot_smooth
+
+        # for j in range(pinik.nv):
+        #     buffer[j].append(q_current[j])
+        # if len(buffer[0]) == sg_window:
+        #     q_dot_smooth = np.zeros_like(q_current)
+        #     for j in range(pinik.nv):
+        #         arr = np.array(buffer[j])
+        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=dt)[sg_half]
+        #     q_dot_current = q_dot_smooth
 
         q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
         if q_ddot is None:
@@ -107,9 +117,9 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
         acc_vertices = (Ree @ acc_poly.vertices).T + tee
         amax = np.max(acc_vertices[:, 0])
 
-        acc_max[:] = amax
+        acc_max[i] = amax
         joint_positions[i, :] = q_current
-        joint_speeds[i, :] = q_dot_current
+        joint_speeds[i, :] = q_dot
         joint_accels[i, :] = q_ddot
 
         q_prev[:] = q_current
@@ -276,7 +286,7 @@ def main():
 
     # Parameters
     step_amp = 0.01
-    duration = 0.7
+    duration = 0.5
     t0 = 0.2
     band = 0.05 * step_amp
 

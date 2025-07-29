@@ -31,9 +31,9 @@ class PinocchioControl:
             "r_arm": np.zeros(7),  # [rad]
         }
 
-        self.q_previous = {
-            "l_arm": np.zeros(7),  # [rad]
-            "r_arm": np.zeros(7),  # [rad]
+        self.q_dot_current = {
+            "l_arm": np.zeros(7),  # [rad.s⁻¹]
+            "r_arm": np.zeros(7),  # [rad.s⁻¹]
         }
 
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
@@ -103,23 +103,21 @@ class PinocchioControl:
             for arm in ["l_arm", "r_arm"]:
                 with self.lock:
                     q_current = self.q_present[arm].copy()  # [rad]
-                    q_previous = self.q_previous[arm].copy()  # [rad]
+                    q_dot_current = self.q_dot_current[arm].copy()  # [rad.s⁻¹]
                     target = self.target_pose[arm]
 
                 if target is None:
                     continue
 
-                q_dot_current = (q_current - q_previous) / self.ik_step
-
                 buffer = self.vel_buffers[arm]
                 for j in range(7):
-                    buffer[j].append(q_dot_current[j])
+                    buffer[j].append(q_current[j])
 
                 if len(buffer[0]) == self.sg_window:
                     q_dot_smooth = np.zeros(7)
                     for j in range(7):
                         arr = np.array(buffer[j])
-                        smooth_sig = savitzky_golay(arr, window_size=self.sg_window, order=self.sg_order)
+                        smooth_sig = savitzky_golay(arr, window_size=self.sg_window, deriv=1, order=self.sg_order, rate=self.ik_step)
                         q_dot_smooth[j] = smooth_sig[self.sg_half]
                     q_dot_current = q_dot_smooth
 
@@ -158,7 +156,6 @@ class PinocchioControl:
 
                 else:
                     with self.lock:
-                        self.q_previous[arm] = q_current
                         self.q_present[arm] = q_updated
 
                     self.node.publish_joint_commands(arm, q_updated)
