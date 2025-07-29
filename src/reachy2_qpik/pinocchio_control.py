@@ -117,7 +117,9 @@ class PinocchioControl:
                     q_dot_smooth = np.zeros(7)
                     for j in range(7):
                         arr = np.array(buffer[j])
-                        smooth_sig = savitzky_golay(arr, window_size=self.sg_window, deriv=1, order=self.sg_order, rate=self.ik_step)
+                        smooth_sig = savitzky_golay(
+                            arr, window_size=self.sg_window, deriv=1, order=self.sg_order, rate=self.ik_step
+                        )
                         q_dot_smooth[j] = smooth_sig[self.sg_half]
                     q_dot_current = q_dot_smooth
 

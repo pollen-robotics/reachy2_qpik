@@ -74,14 +74,14 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
         else:
             q_dot_current = (q_current - q_prev) / dt
 
-        # for j in range(pinik.nv):
-        #     buffer[j].append(q_dot_current[j])
-        # if len(buffer[0]) == sg_window:
-        #     q_dot_smooth = np.zeros_like(q_dot_current)
-        #     for j in range(pinik.nv):
-        #         arr = np.array(buffer[j])
-        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=dt)[sg_half]
-        #     q_dot_current = q_dot_smooth
+        for j in range(pinik.nv):
+            buffer[j].append(q_dot_current[j])
+        if len(buffer[0]) == sg_window:
+            q_dot_smooth = np.zeros_like(q_dot_current)
+            for j in range(pinik.nv):
+                arr = np.array(buffer[j])
+                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=dt)[sg_half]
+            q_dot_current = q_dot_smooth
 
         # for j in range(pinik.nv):
         #     buffer[j].append(q_current[j])
