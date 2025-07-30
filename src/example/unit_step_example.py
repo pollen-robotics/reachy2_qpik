@@ -23,11 +23,12 @@ from reachy2_qpik.utils import savitzky_golay
 def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
     """Position Unit Step simulation."""
     # Parameters
-    dt = pinik.dt
+    ik_step = pinik.dt
+    dt = 1 / 500
     steps = int(duration / dt)
 
-    sg_window = 11
-    sg_order = 4
+    sg_window = 9
+    sg_order = 3
     sg_half = (sg_window - 1) // 2
 
     i_step_start = int(t0 / dt)
@@ -61,7 +62,8 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
     tau_min = -tau_max
 
     # Control loop
-    for i in range(steps):
+    i = 0
+    while i < steps:
         if i < i_step_start:
             goal = goal_flat
             step_input[i] = 0.0
@@ -69,35 +71,35 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
             goal = goal_step
             step_input[i] = step_amp
 
-        if i == 0:
-            q_dot_current = np.zeros_like(q_current)
-        else:
-            q_dot_current = (q_current - q_prev) / dt
-
-        for j in range(pinik.nv):
-            buffer[j].append(q_dot_current[j])
-        if len(buffer[0]) == sg_window:
-            q_dot_smooth = np.zeros_like(q_dot_current)
-            for j in range(pinik.nv):
-                arr = np.array(buffer[j])
-                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=dt)[sg_half]
-            q_dot_current = q_dot_smooth
+        # if i == 0:
+        #     q_dot_current = np.zeros_like(q_current)
+        # else:
+        #     q_dot_current = (q_current - q_prev) / ik_step
 
         # for j in range(pinik.nv):
-        #     buffer[j].append(q_current[j])
+        #     buffer[j].append(q_dot_current[j])
         # if len(buffer[0]) == sg_window:
-        #     q_dot_smooth = np.zeros_like(q_current)
+        #     q_dot_smooth = np.zeros_like(q_dot_current)
         #     for j in range(pinik.nv):
         #         arr = np.array(buffer[j])
-        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=dt)[sg_half]
+        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=ik_step)[sg_half]
         #     q_dot_current = q_dot_smooth
+
+        for j in range(pinik.nv):
+            buffer[j].append(q_current[j])
+        if len(buffer[0]) == sg_window:
+            q_dot_smooth = np.zeros_like(q_current)
+            for j in range(pinik.nv):
+                arr = np.array(buffer[j])
+                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=dt)[sg_half]
+            q_dot_current = q_dot_smooth
 
         q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
         if q_ddot is None:
             q_ddot = np.zeros_like(q_current)
 
-        q_dot = q_dot_current + q_ddot * dt
-        q_updated = pin.integrate(pinik.model, q_current, q_dot * dt)
+        q_dot = q_dot_current + q_ddot * ik_step
+        q_updated = pin.integrate(pinik.model, q_current, q_dot * ik_step)
 
         pin.framesForwardKinematics(pinik.model, pinik.data, q_updated)
         pin.updateFramePlacements(pinik.model, pinik.data)
@@ -124,6 +126,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
 
         q_prev[:] = q_current
         q_current[:] = q_updated
+        i += 1
 
     return t_list, cartesian_list, step_input, joint_positions, joint_speeds, joint_accels, acc_max
 

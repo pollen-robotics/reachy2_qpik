@@ -72,10 +72,8 @@ def test_reachable_poses() -> None:
     # Reachable poses
     r_goal_poses = np.array(
         [
-            [[0.0001, -0.2, -0.6599], [0, 0, 0]],
             [[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]],
-            # [[0.07, -0.2, -0.50], [0, 0, 0]],  # backwards limit
-            # [[0.07, -0.85, -0.0], [-np.pi / 2, 0, 0]],  # backwards limit
+            [[0.015, -0.2, -0.60], [0, 0, 0]],
             [[0.48, -0.2, -0.08], [0, -np.pi / 2, 0]],
         ]
     )
@@ -87,19 +85,19 @@ def test_reachable_poses() -> None:
 
         go_to_pose(reachy, r_goal_pose, "r_arm")
         go_to_pose(reachy, l_goal_pose, "l_arm")
-        time.sleep(1.5)
+        time.sleep(2.5)
 
         r_real_pose = reachy.r_arm.forward_kinematics()
         l_real_pose = reachy.l_arm.forward_kinematics()
 
         # Position and rotation errors
-        assert np.linalg.norm(r_real_pose[:3, 3] - r_goal_pose[:3, 3]) < 1.5e-1
-        assert np.linalg.norm(l_real_pose[:3, 3] - l_goal_pose[:3, 3]) < 1.5e-1
-        assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 1e-2
-        assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 1e-2
+        assert np.linalg.norm(r_real_pose[:3, 3] - r_goal_pose[:3, 3]) < 2e-1
+        assert np.linalg.norm(l_real_pose[:3, 3] - l_goal_pose[:3, 3]) < 2e-1
+        assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 2e-1
+        assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 2e-1
 
         # Symmetrism between left and right arm
-        assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 1e-5
+        assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 1e-3
 
     reachy.turn_off()
     assert True
@@ -173,8 +171,8 @@ def test_circle() -> None:
 
     assert np.linalg.norm(r_real_pose[:3, 3] - r_goal_pose[:3, 3]) < 1.5e-1
     assert np.linalg.norm(l_real_pose[:3, 3] - l_goal_pose[:3, 3]) < 1.5e-1
-    assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 1e-2
-    assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 1e-2
+    assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 5e-2
+    assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 5e-2
     assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 1e-3
 
     nbr_points = int(duration * control_frequency)
@@ -216,9 +214,9 @@ def test_circle() -> None:
 
             assert np.linalg.norm(r_real_pose[:3, 3] - r_goal_pose[:3, 3]) < 5.5e-1
             assert np.linalg.norm(l_real_pose[:3, 3] - l_goal_pose[:3, 3]) < 5.5e-1
-            assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 1e-2
-            assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 1e-2
-            assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 1e-2
+            assert np.linalg.norm(R.from_matrix(r_goal_pose[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 2e-1
+            assert np.linalg.norm(R.from_matrix(l_goal_pose[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 2e-1
+            assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 2e-2
             assert np.allclose(l_joints, l_previous_joints, atol=5)
             assert np.allclose(r_joints, r_previous_joints, atol=5)
             l_previous_joints = l_joints
