@@ -8,6 +8,7 @@
 """
 
 import argparse
+import time
 from collections import deque
 
 import matplotlib.pyplot as plt
@@ -64,6 +65,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
     # Control loop
     i = 0
     while i < steps:
+        t = time.time()
         if i < i_step_start:
             goal = goal_flat
             step_input[i] = 0.0
@@ -71,28 +73,28 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
             goal = goal_step
             step_input[i] = step_amp
 
-        # if i == 0:
-        #     q_dot_current = np.zeros_like(q_current)
-        # else:
-        #     q_dot_current = (q_current - q_prev) / ik_step
-
-        # for j in range(pinik.nv):
-        #     buffer[j].append(q_dot_current[j])
-        # if len(buffer[0]) == sg_window:
-        #     q_dot_smooth = np.zeros_like(q_dot_current)
-        #     for j in range(pinik.nv):
-        #         arr = np.array(buffer[j])
-        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=ik_step)[sg_half]
-        #     q_dot_current = q_dot_smooth
+        if i == 0:
+            q_dot_current = np.zeros_like(q_current)
+        else:
+            q_dot_current = (q_current - q_prev) / ik_step
 
         for j in range(pinik.nv):
-            buffer[j].append(q_current[j])
+            buffer[j].append(q_dot_current[j])
         if len(buffer[0]) == sg_window:
-            q_dot_smooth = np.zeros_like(q_current)
+            q_dot_smooth = np.zeros_like(q_dot_current)
             for j in range(pinik.nv):
                 arr = np.array(buffer[j])
-                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=dt)[sg_half]
+                q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, order=sg_order, rate=ik_step)[sg_half]
             q_dot_current = q_dot_smooth
+
+        # for j in range(pinik.nv):
+        #     buffer[j].append(q_current[j])
+        # if len(buffer[0]) == sg_window:
+        #     q_dot_smooth = np.zeros_like(q_current)
+        #     for j in range(pinik.nv):
+        #         arr = np.array(buffer[j])
+        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=dt)[sg_half]
+        #     q_dot_current = q_dot_smooth
 
         q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
         if q_ddot is None:
@@ -127,6 +129,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
         q_prev[:] = q_current
         q_current[:] = q_updated
         i += 1
+        time.sleep(max(dt - (time.time() - t), 0.0))
 
     return t_list, cartesian_list, step_input, joint_positions, joint_speeds, joint_accels, acc_max
 

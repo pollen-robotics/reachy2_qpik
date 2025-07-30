@@ -187,7 +187,7 @@ if __name__ == "__main__":
     reachy.r_arm.gripper.close()
     time.sleep(0.5)
 
-    print("Test - Making heart")
+    print("Example - Making heart")
     draw_heart(reachy, collect_data=False)
 
     reachy.turn_off()

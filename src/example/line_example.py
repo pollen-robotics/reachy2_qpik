@@ -177,7 +177,7 @@ def main() -> None:
 
     reachy.turn_on()
 
-    print("Test - Making a line")
+    print("Example - Making a line")
     start_pose = np.array([[0.4, -0.4, -0.2], [0, -np.pi / 2, 0]])
     end_pose = np.array([[0.4, -0.1, -0.2], [0, -np.pi / 2, 0]])
     rotation_matrix = R.from_euler("xyz", [0, -np.pi / 2, 0]).as_matrix()

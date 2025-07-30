@@ -40,7 +40,7 @@ class PinocchioIK:
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.Kp = 0.4  # Proportional gain
 
-        self.Kpc = 7000
+        self.Kpc = 6500
         self.Kdc = 2.5 * np.sqrt(self.Kpc)
         self.Kpa = 150
         self.Kda = 2 * np.sqrt(self.Kpa)
@@ -48,11 +48,11 @@ class PinocchioIK:
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
         self.K_lim = 0.1
-        self.q_min = self.model.lowerPositionLimit * 1.0
-        self.q_max = self.model.upperPositionLimit * 1.0
+        self.q_min = self.model.lowerPositionLimit * 1.0  # [rad]
+        self.q_max = self.model.upperPositionLimit * 1.0  # [rad]
 
-        self.q_dot_max = np.array([6.5] * 7)
-        self.q_dot_min = -self.q_dot_max
+        self.q_dot_max = np.array([6.5] * 7)  # [rad.s⁻¹]
+        self.q_dot_min = -self.q_dot_max  # [rad.s⁻¹]
 
         if arm == "l_arm":
             # self.q0_pref = [
@@ -269,6 +269,8 @@ class PinocchioIK:
         a = self.Kpc * err - self.Kdc * v  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
         e_a = a - J_dot.dot(q_dot)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+
+        # QP terms
         q_ddot_posture = self.Kpa * (self.q0_pref - q) - self.Kda * q_dot  # [rad.s⁻²]
 
         P = J.T @ self.W @ J + self.lambda_a * np.eye(self.nv) + self.beta * np.eye(self.nv)

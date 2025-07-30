@@ -37,8 +37,8 @@ class PinocchioControl:
         }
 
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
-            "l_arm": None,
-            "r_arm": None,
+            "l_arm": None,  # [m, m, m, rad, rad, rad]
+            "r_arm": None,  # [m, m, m, rad, rad, rad]
         }
 
         self.joint_velocity_limits = {
@@ -56,7 +56,7 @@ class PinocchioControl:
         self.sg_order = sg_order
         self.sg_half = (sg_window - 1) // 2
 
-        self.vel_buffers: dict[str, list[deque[np.float64]]] = {
+        self.buffers: dict[str, list[deque[np.float64]]] = {
             "l_arm": [deque(maxlen=sg_window) for _ in range(7)],
             "r_arm": [deque(maxlen=sg_window) for _ in range(7)],
         }
@@ -109,7 +109,7 @@ class PinocchioControl:
                 if target is None:
                     continue
 
-                buffer = self.vel_buffers[arm]
+                buffer = self.buffers[arm]
                 for j in range(7):
                     buffer[j].append(q_current[j])
 
@@ -159,6 +159,7 @@ class PinocchioControl:
                 else:
                     with self.lock:
                         self.q_present[arm] = q_updated
+                        self.q_dot_current[arm] = q_dot
 
                     self.node.publish_joint_commands(arm, q_updated)
 

@@ -117,7 +117,7 @@ def main() -> None:
 
     reachy.turn_on()
 
-    print("Test - Making a square")
+    print("Example - Making a square")
     A = np.array([0.4, -0.35, -0.4])
     B = np.array([0.4, -0.35, -0.15])
     C = np.array([0.4, -0.2, -0.15])

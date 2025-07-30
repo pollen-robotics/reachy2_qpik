@@ -108,7 +108,7 @@ def make_circle(
                 data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="sym_circle_data.csv")
+        save_data_to_csv(data_lst, filename="qp_circle_data.csv")
 
     print(f"Total time: {total_time:.3f} s")
     print(f"Time for one circle: {total_time / number_of_turns:.3}s")
@@ -177,7 +177,7 @@ def main() -> None:
 
     reachy.turn_on()
 
-    print("Test - Making a circle")
+    print("Example - Making a circle")
 
     radius = 0.15
     center = np.array([0.4, -0.4, -0.2])
