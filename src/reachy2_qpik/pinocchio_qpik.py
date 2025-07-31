@@ -78,9 +78,9 @@ class PinocchioIK:
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
 
         self.lambda_v = 1e-6
-        self.lambda_a = 1e-8
+        self.lambda_a = 1e-9
         self.alpha = 1e-8
-        self.beta = 1e-2
+        self.beta = 1e-3
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""

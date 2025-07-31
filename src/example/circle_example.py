@@ -190,7 +190,7 @@ def main() -> None:
     reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
-    make_circle(reachy, center, orientation, radius, collect_data=False)
+    make_circle(reachy, center, orientation, radius, collect_data=True)
 
     time.sleep(2)
 

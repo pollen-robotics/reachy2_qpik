@@ -109,7 +109,7 @@ def make_line(
             data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="sym_line_data.csv")
+        save_data_to_csv(data_lst, filename="qp_line_data.csv")
 
     print(f"Total time: {total_time:.3f} s")
 
@@ -179,7 +179,7 @@ def main() -> None:
 
     print("Example - Making a line")
     start_pose = np.array([[0.4, -0.4, -0.2], [0, -np.pi / 2, 0]])
-    end_pose = np.array([[0.4, -0.1, -0.2], [0, -np.pi / 2, 0]])
+    end_pose = np.array([[0.4, -0.2, -0.2], [0, -np.pi / 2, 0]])
     rotation_matrix = R.from_euler("xyz", [0, -np.pi / 2, 0]).as_matrix()
     Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, 0.4, -0.2]), rotation_matrix)
     Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, -0.4, -0.2]), rotation_matrix)

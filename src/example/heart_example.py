@@ -118,7 +118,7 @@ def draw_heart(
                 data_lst.append(data)
 
     if collect_data:
-        save_data_to_csv(data_lst, filename="sym_heart_data.csv")
+        save_data_to_csv(data_lst, filename="qp_heart_data.csv")
 
     print(f"Total time: {total_time:.3f} s")
     print(f"Time for one heart: {total_time / number_of_turns:.3}s")
