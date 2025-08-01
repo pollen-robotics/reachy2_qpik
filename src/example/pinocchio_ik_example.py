@@ -39,7 +39,6 @@ def main() -> None:
 
     sol, is_reachable, state = pinik_r.inverse_kinematics(goal_pose=goal_pose, current_joints=current_joints)
     current_joints = sol
-    print(is_reachable)
 
     print(f"Right IK Solution: {sol}")
 
