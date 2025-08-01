@@ -11,7 +11,7 @@ def main() -> None:
     """Run the main function."""
     urdf_path = r"../config_files/reachy.urdf"
 
-    pinik = PinocchioIK(urdf_path=urdf_path, arm="l_arm")
+    pinik_l = PinocchioIK(urdf_path=urdf_path, arm="l_arm")
     pinik_r = PinocchioIK(urdf_path=urdf_path, arm="r_arm")
 
     rotation_matrix = R.from_euler("xyz", [0, 0, 0], degrees=True).as_matrix()
@@ -21,9 +21,9 @@ def main() -> None:
     goal_pose[:3, :3] = rotation_matrix
     goal_pose[:3, 3] = position
 
-    current_joints = pin.neutral(pinik.model)
+    current_joints = pin.neutral(pinik_l.model)
 
-    sol, is_reachable, state = pinik.inverse_kinematics(goal_pose=goal_pose, current_joints=current_joints)
+    sol, is_reachable, state = pinik_l.inverse_kinematics(goal_pose=goal_pose, current_joints=current_joints)
     current_joints = sol
 
     print(f"Left IK Solution: {sol}")
@@ -39,6 +39,7 @@ def main() -> None:
 
     sol, is_reachable, state = pinik_r.inverse_kinematics(goal_pose=goal_pose, current_joints=current_joints)
     current_joints = sol
+    print(is_reachable)
 
     print(f"Right IK Solution: {sol}")
 
