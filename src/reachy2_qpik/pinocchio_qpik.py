@@ -80,7 +80,7 @@ class PinocchioIK:
         self.lambda_v = 1e-6
         self.lambda_a = 1e-9
         self.alpha = 1e-8
-        self.beta = 8e-3
+        self.beta = 5e-2
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
