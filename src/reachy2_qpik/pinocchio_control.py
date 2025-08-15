@@ -9,7 +9,12 @@ import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 
-from reachy2_qpik.utils import angle_diff, multiturn_safety_check, savitzky_golay
+from reachy2_qpik.utils import (
+    angle_diff,
+    limit_orbita3d_joints_wrist,
+    multiturn_safety_check,
+    savitzky_golay,
+)
 
 
 class PinocchioControl:
@@ -138,6 +143,8 @@ class PinocchioControl:
                     q_dot = q_dot / max_scaling
 
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
+
+                q_updated = np.array(limit_orbita3d_joints_wrist(list(q_updated), 74.17649320975901))
 
                 diffs = np.array([angle_diff(q_updated[i], q_current[i]) for i in range(7)])
                 self.q_unwrapped[arm] += diffs

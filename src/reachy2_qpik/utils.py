@@ -5,6 +5,32 @@ import math
 
 import numpy as np
 import numpy.typing as npt
+from scipy.spatial.transform import Rotation as R
+
+
+def limit_orbita3d_joints(joints: list[float], orbita3D_max_angle: float) -> list[float]:
+    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D. i.e. casting into Orbita's cone."""
+    joints = copy.deepcopy(joints)
+    rotation = R.from_euler("XYZ", [joints[0], joints[1], joints[2]], degrees=False)
+    new_joints = rotation.as_euler("ZYZ", degrees=False)
+    new_joints[1] = min(orbita3D_max_angle, max(-orbita3D_max_angle, new_joints[1]))
+    rotation = R.from_euler("ZYZ", new_joints, degrees=False)
+    [roll, pitch, yaw] = rotation.as_euler("XYZ", degrees=False)
+    joints = [float(roll), float(pitch), float(yaw)]
+    return joints
+
+
+def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) -> list[float]:
+    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D using the wrist conventions.
+    i.e. casting into Orbita's cone."""
+    joints = copy.deepcopy(joints)
+    wrist_joints = joints[4:7]
+
+    wrist_joints = limit_orbita3d_joints(wrist_joints, orbita3D_max_angle)
+
+    joints[4:7] = wrist_joints
+
+    return joints
 
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):

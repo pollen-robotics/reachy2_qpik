@@ -48,8 +48,12 @@ class PinocchioIK:
         self.W = np.diag([1.725] * 3 + [0.1] * 3)
 
         self.K_lim = 0.1
-        self.q_min = self.model.lowerPositionLimit * 1.0  # [rad]
-        self.q_max = self.model.upperPositionLimit * 1.0  # [rad]
+        self.q_min = np.array(
+            [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
+        )  # [rad]
+        self.q_max = np.array(
+            [10000.0, 3.14, 10000.0, 0.06, 0.7417649320975901, 0.7417649320975901, 0.7417649320975901]
+        )  # [rad]
 
         self.q_dot_max = np.array([6.5] * 7)  # [rad.s⁻¹]
         self.q_dot_min = -self.q_dot_max  # [rad.s⁻¹]
