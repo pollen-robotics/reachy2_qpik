@@ -11,8 +11,8 @@ import numpy.typing as npt
 import rclpy
 from pollen_msgs.msg import IKRequest
 from rclpy.node import Node
-from rclpy.subscription import Subscription
 from rclpy.qos import QoSProfile, ReliabilityPolicy
+from rclpy.subscription import Subscription
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
 
@@ -145,7 +145,7 @@ class LiveDataNode(Node):
                 return None
         else:
             return None
-        
+
     def _compute_and_save_data(self) -> None:
         """Compute the data and save it to a CSV file."""
         try:
