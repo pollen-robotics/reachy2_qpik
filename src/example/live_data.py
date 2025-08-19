@@ -4,19 +4,20 @@ import argparse
 import csv
 import os
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import numpy.typing as npt
 import rclpy
 from pollen_msgs.msg import IKRequest
 from rclpy.node import Node
+from rclpy.subscription import Subscription
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
 
 
-def make_homogenous_from_pose(position: npt.NDArray[np.float64], quat: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def make_homogenous_from_pose(position: Any, quat: Any) -> npt.NDArray[np.float64]:
     """Convert a translation and a quaternion to a 4x4 homogeneous matrix."""
     pos = np.asarray([position.x, position.y, position.z], dtype=float)
     q = np.asarray([quat.x, quat.y, quat.z, quat.w], dtype=float)
@@ -84,13 +85,15 @@ class LiveDataNode(Node):
         self.r_topic = "/r_arm/ik_target_pose"
         self.l_topic = "/l_arm/ik_target_pose"
 
+        self.r_sub: Optional[Subscription] = None
+        self.l_sub: Optional[Subscription] = None
+
         if self.r_topic in topic_type_map:
             self.r_msg_type = IKRequest
             self.r_sub = self.create_subscription(self.r_msg_type, self.r_topic, self.r_callback, qos_profile=self.qos)
             self.get_logger().info(f"Subscribed to {self.r_topic}")
         else:
             self.get_logger().warning(f"Topic {self.r_topic} not present on the ROS graph!")
-            self.r_sub = None
 
         if self.l_topic in topic_type_map:
             self.l_msg_type = IKRequest
@@ -98,10 +101,9 @@ class LiveDataNode(Node):
             self.get_logger().info(f"Subscribed to {self.l_topic}")
         else:
             self.get_logger().warning(f"Topic {self.l_topic} not present on the ROS graph!")
-            self.l_sub = None
 
-        self.last_r_target: Optional[np.ndarray] = None
-        self.last_l_target: Optional[np.ndarray] = None
+        self.last_r_target: Optional[npt.NDArray[np.float64]] = None
+        self.last_l_target: Optional[npt.NDArray[np.float64]] = None
 
     def r_callback(self, msg: IKRequest) -> None:
         """Callback for the right arm."""
@@ -133,15 +135,17 @@ class LiveDataNode(Node):
         self.last_l_target = M
         self._compute_and_save_data()
 
-    def _msg_to_matrix(self, msg: IKRequest) -> npt.NDArray[np.float64]:
+    def _msg_to_matrix(self, msg: IKRequest) -> Optional[npt.NDArray[np.float64]]:
         """Convert a msg to a NumPy matrix."""
         if IKRequest is not None and isinstance(msg, IKRequest):
             try:
                 ps = msg.pose
                 return make_homogenous_from_pose(ps.pose.position, ps.pose.orientation)
             except Exception:
-                pass
-
+                return None
+        else:
+            return None
+        
     def _compute_and_save_data(self) -> None:
         """Compute the data and save it to a CSV file."""
         try:
