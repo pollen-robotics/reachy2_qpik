@@ -57,7 +57,7 @@ def go_to_pose(reachy: ReachySDK, pose: npt.NDArray[np.float64], arm: str):
 
 
 def heart_curve(factor: float, n_pts: int):
-    """Parametric heart curve in (y,z), returns two arrays of length n_pts."""
+    """Parametric hearFalset curve in (y,z), returns two arrays of length n_pts."""
     s = np.linspace(0, 2 * np.pi, n_pts)
     y = 16 * np.sin(s)
     z = 13 * np.cos(s) - 5 * np.cos(2 * s) - 2 * np.cos(3 * s) - np.cos(4 * s)
