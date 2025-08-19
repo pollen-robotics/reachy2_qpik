@@ -180,12 +180,12 @@ def main(argv=None):
     """Main function."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="localhost", help="Reachy SDK host")
-    parser.add_argument("--save-file", default="live_data.csv", help="CSV filename")
+    parser.add_argument("--filename", default="live_data.csv", help="CSV filename")
     args = parser.parse_args(argv)
 
     rclpy.init()
     try:
-        node = LiveDataNode(reachy_host=args.host, save_file=args.save_file)
+        node = LiveDataNode(reachy_host=args.host, save_file=args.filename)
     except Exception as e:
         print(f"Failed to initialize node: {e}")
         rclpy.shutdown()
