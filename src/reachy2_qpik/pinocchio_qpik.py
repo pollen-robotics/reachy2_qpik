@@ -40,14 +40,14 @@ class PinocchioIK:
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.Kp = 0.4  # Proportional gain
 
-        self.Kpc = 6500
+        self.Kpc = 50000
         self.Kdc = 2.5 * np.sqrt(self.Kpc)
         self.Kpa = 150
         self.Kda = 2 * np.sqrt(self.Kpa)
         self.dt = 0.0025  # Time step
-        self.W = np.diag([1.725] * 3 + [0.1] * 3)
+        self.W = np.diag([1.725e3] * 3 + [0.1e3] * 3)
 
-        self.K_lim = 0.1
+        self.K_lim = 1
         self.q_min = np.array(
             [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
         )  # [rad]
@@ -271,7 +271,6 @@ class PinocchioIK:
 
         v = J.dot(q_dot)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
         a = self.Kpc * err - self.Kdc * v  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
-
         e_a = a - J_dot.dot(q_dot)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
         # QP terms

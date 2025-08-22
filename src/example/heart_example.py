@@ -72,7 +72,7 @@ def draw_heart(
     scale: float = 0.008,
     duration: float = 4.0,
     freq: float = 120.0,
-    number_of_turns: int = 3,
+    number_of_turns: int = 30,
     collect_data: bool = False,
 ):
     """Draw two hearts with Reachy's arms."""
