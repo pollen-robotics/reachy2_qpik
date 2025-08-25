@@ -4,7 +4,7 @@ import argparse
 import csv
 import os
 import time
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -15,6 +15,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.subscription import Subscription
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
+from std_msgs.msg import Float64MultiArray
 
 
 def make_homogenous_from_pose(position: Any, quat: Any) -> npt.NDArray[np.float64]:
@@ -56,9 +57,7 @@ class LiveDataNode(Node):
             "r_q5",
             "r_q6",
             "l_pose",
-            "l_real_pose",
             "r_pose",
-            "r_real_pose",
         ]
         self.csv_writer.writerow(header)
         self.csv_file.flush()
@@ -85,8 +84,19 @@ class LiveDataNode(Node):
         self.r_topic = "/r_arm/ik_target_pose"
         self.l_topic = "/l_arm/ik_target_pose"
 
+        self.r_ctrl_topic = "/r_arm_forward_position_controller/commands"
+        self.l_ctrl_topic = "/l_arm_forward_position_controller/commands"
+
         self.r_sub: Optional[Subscription] = None
         self.l_sub: Optional[Subscription] = None
+        self.r_ctrl_sub: Optional[Subscription] = None
+        self.l_ctrl_sub: Optional[Subscription] = None
+
+        self.last_r_joints_topic: Optional[list] = None
+        self.last_l_joints_topic: Optional[list] = None
+
+        self.last_r_target: Optional[npt.NDArray[np.float64]] = None
+        self.last_l_target: Optional[npt.NDArray[np.float64]] = None
 
         if self.r_topic in topic_type_map:
             self.r_msg_type = IKRequest
@@ -102,11 +112,32 @@ class LiveDataNode(Node):
         else:
             self.get_logger().warning(f"Topic {self.l_topic} not present on the ROS graph!")
 
-        self.last_r_target: Optional[npt.NDArray[np.float64]] = None
-        self.last_l_target: Optional[npt.NDArray[np.float64]] = None
+        if self.r_ctrl_topic in topic_type_map:
+            msg_type = Float64MultiArray
+            self.r_ctrl_sub = self.create_subscription(msg_type, self.r_ctrl_topic, self.r_ctrl_callback, qos_profile=self.qos)
+            self.get_logger().info(f"Subscribed to {self.r_ctrl_topic}")
+        else:
+            self.get_logger().warning(f"Topic {self.r_ctrl_topic} not present on the ROS graph!")
+
+        if self.l_ctrl_topic in topic_type_map:
+            msg_type = Float64MultiArray
+            self.l_ctrl_sub = self.create_subscription(msg_type, self.l_ctrl_topic, self.l_ctrl_callback, qos_profile=self.qos)
+            self.get_logger().info(f"Subscribed to {self.l_ctrl_topic}")
+        else:
+            self.get_logger().warning(f"Topic {self.l_ctrl_topic} not present on the ROS graph!")
+
+        self.log_period = 0.002
+        self.last_save_time = 0.0
+        self._prev_saved_state: Dict[str, Optional[Any]] = {
+            "l_joints": None,
+            "r_joints": None,
+            "l_target": None,
+            "r_target": None,
+        }
+        self.create_timer(self.log_period, self._compute_and_save_data)
 
     def r_callback(self, msg: IKRequest) -> None:
-        """Callback for the right arm."""
+        """Callback for the right arm (IK target)."""
         try:
             M = self._msg_to_matrix(msg)
         except Exception as e:
@@ -118,10 +149,9 @@ class LiveDataNode(Node):
             return
 
         self.last_r_target = M
-        self._compute_and_save_data()
 
     def l_callback(self, msg: IKRequest) -> None:
-        """Callback for the left arm."""
+        """Callback for the left arm (IK target)."""
         try:
             M = self._msg_to_matrix(msg)
         except Exception as e:
@@ -133,10 +163,28 @@ class LiveDataNode(Node):
             return
 
         self.last_l_target = M
-        self._compute_and_save_data()
+
+    def r_ctrl_callback(self, msg: Float64MultiArray) -> None:
+        """Callback for right controller command topic."""
+        try:
+            arr = list(msg.data) if msg is not None else None
+            if arr is not None:
+                # ensure we keep exactly 7 joints if available
+                self.last_r_joints_topic = arr[:7] if len(arr) >= 7 else arr
+        except Exception as e:
+            self.get_logger().error(f"Failed to parse controller message on {self.r_ctrl_topic}: {e}")
+
+    def l_ctrl_callback(self, msg: Float64MultiArray) -> None:
+        """Callback for left controller command topic (same handling)."""
+        try:
+            arr = list(msg.data) if msg is not None else None
+            if arr is not None:
+                self.last_l_joints_topic = arr[:7] if len(arr) >= 7 else arr
+        except Exception as e:
+            self.get_logger().error(f"Failed to parse controller message on {self.l_ctrl_topic}: {e}")
 
     def _msg_to_matrix(self, msg: IKRequest) -> Optional[npt.NDArray[np.float64]]:
-        """Convert a msg to a NumPy matrix."""
+        """Convert an IKRequest msg to a NumPy matrix."""
         if IKRequest is not None and isinstance(msg, IKRequest):
             try:
                 ps = msg.pose
@@ -150,28 +198,52 @@ class LiveDataNode(Node):
         """Compute the data and save it to a CSV file."""
         try:
             now = time.time()
+            if (now - getattr(self, "last_save_time", 0.0)) < (self.log_period * 0.9):
+                return
+
             if not hasattr(self, "t0"):
                 self.t0 = now
             time_val = now - self.t0
 
-            l_joints = self.reachy.l_arm.get_current_positions()
-            r_joints = self.reachy.r_arm.get_current_positions()
-            l_real_pose = self.reachy.l_arm.forward_kinematics()
-            r_real_pose = self.reachy.r_arm.forward_kinematics()
+            l_joints = (
+                self.last_l_joints_topic if self.last_l_joints_topic is not None else self.reachy.l_arm.get_current_positions()
+            )
+            r_joints = (
+                self.last_r_joints_topic if self.last_r_joints_topic is not None else self.reachy.r_arm.get_current_positions()
+            )
+
+            lt = self.last_l_target
+            rt = self.last_r_target
+
+            prev = self._prev_saved_state
+
+            l_list = list(l_joints) if l_joints is not None else [None] * 7
+            r_list = list(r_joints) if r_joints is not None else [None] * 7
 
             row = (
                 [time_val]
-                + l_joints
-                + r_joints
+                + (l_list if l_list is not None else [None] * 7)
+                + (r_list if r_list is not None else [None] * 7)
                 + [
-                    self.last_l_target.tolist() if self.last_l_target is not None else None,
-                    l_real_pose.tolist(),
-                    self.last_r_target.tolist() if self.last_r_target is not None else None,
-                    r_real_pose.tolist(),
+                    lt.tolist() if lt is not None else None,
+                    rt.tolist() if rt is not None else None,
                 ]
             )
+
             self.csv_writer.writerow(row)
             self.csv_file.flush()
+
+            prev["l_joints"] = np.array(l_list, dtype=float) if l_list is not None else None
+            prev["r_joints"] = np.array(r_list, dtype=float) if r_list is not None else None
+            prev["l_target"] = (
+                np.copy(lt) if isinstance(lt, np.ndarray) else (np.array(lt, dtype=float) if lt is not None else None)
+            )
+            prev["r_target"] = (
+                np.copy(rt) if isinstance(rt, np.ndarray) else (np.array(rt, dtype=float) if rt is not None else None)
+            )
+
+            self.last_save_time = now
+
         except Exception as e:
             self.get_logger().error(f"Failed to log CSV row: {e}")
 
