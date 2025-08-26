@@ -32,7 +32,9 @@ def make_homogenous_from_pose(position: Any, quat: Any) -> npt.NDArray[np.float6
 class LiveDataNode(Node):
     """Node for collecting live data."""
 
-    def __init__(self, reachy_host: str = "localhost", save_folder: str = "data", save_file: str = "live_data.csv") -> None:
+    def __init__(
+        self, reachy_host: str = "localhost", save_folder: str = "data/teleop", save_file: str = "live_data.csv"
+    ) -> None:
         """Initializing the class."""
         super().__init__("live_data_node")
 
@@ -126,7 +128,7 @@ class LiveDataNode(Node):
         else:
             self.get_logger().warning(f"Topic {self.l_ctrl_topic} not present on the ROS graph!")
 
-        self.log_period = 0.002
+        self.log_period = 0.004
         self.last_save_time = 0.0
         self._prev_saved_state: Dict[str, Optional[Any]] = {
             "l_joints": None,
@@ -169,7 +171,6 @@ class LiveDataNode(Node):
         try:
             arr = list(msg.data) if msg is not None else None
             if arr is not None:
-                # ensure we keep exactly 7 joints if available
                 self.last_r_joints_topic = arr[:7] if len(arr) >= 7 else arr
         except Exception as e:
             self.get_logger().error(f"Failed to parse controller message on {self.r_ctrl_topic}: {e}")
