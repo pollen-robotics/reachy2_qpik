@@ -8,6 +8,12 @@ import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 
+from reachy2_qpik.utils import (
+    angle_diff,
+    limit_orbita3d_joints_wrist,
+    multiturn_safety_check,
+)
+
 
 class PinocchioSpeedControl:
     """Pinocchio Pose Tracking Control for Reachy2."""
@@ -24,17 +30,25 @@ class PinocchioSpeedControl:
         }
 
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
-            "l_arm": None,
-            "r_arm": None,
+            "l_arm": None,  # [m, m, m, rad, rad, rad]
+            "r_arm": None,  # [m, m, m, rad, rad, rad]
+        }
+
+        self.q_unwrapped = {
+            "l_arm": np.zeros(7),  # [rad]
+            "r_arm": np.zeros(7),  # [rad]
         }
 
         self.joint_velocity_limits = {
-            "l_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
-            "r_arm": np.array([6.5] * 7),  # [rad.s⁻¹]
+            "l_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
+            "r_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
         }
 
         self.ik_solver = ik_solver
         self.ik_step = ik_solver["r_arm"].dt  # [s]
+
+        self.running = True
+        self.emergency_state = ""
 
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
@@ -72,7 +86,7 @@ class PinocchioSpeedControl:
         start_time = 0
         loop_count = 0
 
-        while True:
+        while self.running:
             t = time.time()
             loop_count += 1
             for arm in ["l_arm", "r_arm"]:
@@ -96,8 +110,28 @@ class PinocchioSpeedControl:
 
                 q_updated = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
 
-                with self.lock:
-                    self.q_present[arm] = q_updated
+                q_updated = np.array(limit_orbita3d_joints_wrist(list(q_updated), 74.17649320975901))
+
+                diffs = np.array([angle_diff(q_updated[i], q_current[i]) for i in range(7)])
+                self.q_unwrapped[arm] += diffs * 0
+
+                self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
+                    self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
+                )
+
+                if emergency:
+                    print(f"[EMERGENCY STOP] {arm} joint limits reached.")
+                    print(self.emergency_state)
+                    self.running = False
+                    self.target_pose["l_arm"] = None
+                    self.target_pose["r_arm"] = None
+                    self.node.publish_joint_commands("l_arm", self.q_present["l_arm"])
+                    self.node.publish_joint_commands("r_arm", self.q_present["r_arm"])
+                    break
+
+                else:
+                    with self.lock:
+                        self.q_present[arm] = q_updated
 
                 self.node.publish_joint_commands(arm, q_updated)
 
