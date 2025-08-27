@@ -1,4 +1,4 @@
-"""Pinocchio IK Control Loop."""
+"""Pinocchio IK Acceleration Control Loop."""
 
 import threading
 import time
@@ -18,7 +18,7 @@ from reachy2_qpik.utils import (
 
 
 class PinocchioControl:
-    """Pinocchio Pose Tracking Control for Reachy2."""
+    """Pinocchio Acceleration Pose Tracking Control for Reachy2."""
 
     def __init__(self, node, ik_solver, dt: float = 1 / 500, sg_window: int = 11, sg_order: int = 3):
         """Initialize the class."""

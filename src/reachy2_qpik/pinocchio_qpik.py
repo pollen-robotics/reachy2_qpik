@@ -11,7 +11,7 @@ import qpsolvers
 from numpy.linalg import norm
 
 
-class PinocchioIK:
+class PinocchioQPIK:
     """Pinocchio IK class for Reachy2."""
 
     def __init__(

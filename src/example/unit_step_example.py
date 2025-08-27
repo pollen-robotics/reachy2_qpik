@@ -17,11 +17,11 @@ import numpy.typing as npt
 import pinocchio as pin
 import pycapacity as pycap
 
-from reachy2_qpik.pinocchio_qpik import PinocchioIK
+from reachy2_qpik.pinocchio_qpik import PinocchioQPIK
 from reachy2_qpik.utils import savitzky_golay
 
 
-def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
+def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float):
     """Position Unit Step simulation."""
     # Parameters
     ik_step = pinik.dt
@@ -135,7 +135,7 @@ def unit_step(pinik: PinocchioIK, step_amp: float, duration: float, t0: float):
 
 
 def plot_results(
-    pinik: PinocchioIK,
+    pinik: PinocchioQPIK,
     mode: int,
     t: npt.NDArray[np.float64],
     cart_list: npt.NDArray[np.float64],
@@ -297,7 +297,7 @@ def main():
     band = 0.05 * step_amp
 
     urdf = r"../config_files/reachy.urdf"
-    pinik = PinocchioIK(urdf_path=urdf, arm="l_arm")
+    pinik = PinocchioQPIK(urdf_path=urdf, arm="l_arm")
 
     t, cart, step_in, q_pos, q_vel, q_acc, acc_max = unit_step(pinik, step_amp, duration, t0)
 
