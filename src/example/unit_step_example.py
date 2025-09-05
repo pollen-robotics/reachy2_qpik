@@ -44,8 +44,7 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     joint_accels = np.zeros((steps, pinik.nv))
     acc_max_pos = np.zeros(steps)
     acc_max_neg = np.zeros(steps)
-    cart_a_des = np.zeros(steps)  
-    
+    cart_a_des = np.zeros(steps)
 
     q0 = np.deg2rad([0, 0, -10, -90, 0, 0, 0])  # Elbow 90°
     pin.framesForwardKinematics(pinik.model, pinik.data, q0)
@@ -60,7 +59,7 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
 
     # for j in range(pinik.nv):
     #     buffer[j].extend([float(q0[j])] * sg_window)
-        
+
     q_prev = q0.copy()
     q_current = q0.copy()
     q_dot_current = np.zeros_like(q_current)
@@ -78,7 +77,6 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
         else:
             goal = goal_step
             step_input[i] = step_amp
-
 
         # if len(buffer[0]) == sg_window:
         #     q_dot_smooth = np.zeros_like(q_current)
@@ -116,8 +114,8 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
         cartesian_list[i] = tee[0] - ee_baselink.translation[0]
         acc_poly = pycap.robot.acceleration_polytope(J_pos, M, tau_max, tau_min, options=opt)
         acc_vertices = (Ree @ acc_poly.vertices).T + tee
-        amax_pos = np.max(acc_vertices[:, 0])  
-        amax_neg = np.min(acc_vertices[:, 0]) 
+        amax_pos = np.max(acc_vertices[:, 0])
+        amax_neg = np.min(acc_vertices[:, 0])
 
         acc_max_pos[i] = amax_pos
         acc_max_neg[i] = amax_neg
@@ -150,7 +148,7 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
         acc_max_pos,
         acc_max_neg,
         cart_a_des,
-        measured_acc,   
+        measured_acc,
     )
 
 
@@ -237,7 +235,7 @@ def plot_results(
     elif mode == 5:
         _, ax = plt.subplots(figsize=(12, 8))
         ax.plot(t, cart_a_meas, color="red", label="measured acceleration")
-        ax.plot(t, cart_a_des, "c--",label="desired acceleration (controller)")
+        ax.plot(t, cart_a_des, "c--", label="desired acceleration (controller)")
         ax.plot(t, acc_max_pos, "orange", label="max acceleration (pycapacity)")
         ax.plot(t, acc_max_neg, "orange")
         ax.set_title("Cartesian accelerations")
@@ -331,7 +329,7 @@ def main():
     group.add_argument("--pos", action="store_true", help="Joint positions only")
     group.add_argument("--spe", action="store_true", help="Joint speeds only")
     group.add_argument("--acc", action="store_true", help="Joint accelerations only")
-    group.add_argument("--cacc", action="store_true", help="Cartesian accelerations only") 
+    group.add_argument("--cacc", action="store_true", help="Cartesian accelerations only")
     args = parser.parse_args()
 
     if args.uni:
@@ -376,7 +374,9 @@ def main():
         if all(within_band[i:]):
             setting_time = t[i] - t0
             break
-    plot_results(pinik, mode, t, cart, step_in, q_pos, q_vel, q_acc, acc_max_pos, acc_max_neg, setting_time, cart_a_des, cart_a_meas)
+    plot_results(
+        pinik, mode, t, cart, step_in, q_pos, q_vel, q_acc, acc_max_pos, acc_max_neg, setting_time, cart_a_des, cart_a_meas
+    )
 
 
 if __name__ == "__main__":
