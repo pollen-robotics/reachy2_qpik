@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import math
 import os
 import time
 from typing import Any, Dict, Optional
@@ -15,7 +16,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.subscription import Subscription
 from reachy2_sdk import ReachySDK
 from scipy.spatial.transform import Rotation as R
-from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import JointState
 
 
 def make_homogenous_from_pose(position: Any, quat: Any) -> npt.NDArray[np.float64]:
@@ -86,13 +87,11 @@ class LiveDataNode(Node):
         self.r_topic = "/r_arm/ik_target_pose"
         self.l_topic = "/l_arm/ik_target_pose"
 
-        self.r_ctrl_topic = "/r_arm_forward_position_controller/commands"
-        self.l_ctrl_topic = "/l_arm_forward_position_controller/commands"
+        self.joint_states_topic = "/joint_states"
 
         self.r_sub: Optional[Subscription] = None
         self.l_sub: Optional[Subscription] = None
-        self.r_ctrl_sub: Optional[Subscription] = None
-        self.l_ctrl_sub: Optional[Subscription] = None
+        self.joint_sub: Optional[Subscription] = None
 
         self.last_r_joints_topic: Optional[list] = None
         self.last_l_joints_topic: Optional[list] = None
@@ -114,19 +113,13 @@ class LiveDataNode(Node):
         else:
             self.get_logger().warning(f"Topic {self.l_topic} not present on the ROS graph!")
 
-        if self.r_ctrl_topic in topic_type_map:
-            msg_type = Float64MultiArray
-            self.r_ctrl_sub = self.create_subscription(msg_type, self.r_ctrl_topic, self.r_ctrl_callback, qos_profile=self.qos)
-            self.get_logger().info(f"Subscribed to {self.r_ctrl_topic}")
+        if self.joint_states_topic in topic_type_map:
+            self.joint_sub = self.create_subscription(
+                JointState, self.joint_states_topic, self.joint_state_callback, qos_profile=self.qos
+            )
+            self.get_logger().info(f"Subscribed to {self.joint_states_topic}")
         else:
-            self.get_logger().warning(f"Topic {self.r_ctrl_topic} not present on the ROS graph!")
-
-        if self.l_ctrl_topic in topic_type_map:
-            msg_type = Float64MultiArray
-            self.l_ctrl_sub = self.create_subscription(msg_type, self.l_ctrl_topic, self.l_ctrl_callback, qos_profile=self.qos)
-            self.get_logger().info(f"Subscribed to {self.l_ctrl_topic}")
-        else:
-            self.get_logger().warning(f"Topic {self.l_ctrl_topic} not present on the ROS graph!")
+            self.get_logger().warning(f"Topic {self.joint_states_topic} not present on the ROS graph!")
 
         self.log_period = 0.004
         self.last_save_time = 0.0
@@ -137,6 +130,16 @@ class LiveDataNode(Node):
             "r_target": None,
         }
         self.create_timer(self.log_period, self._compute_and_save_data)
+
+        self._arm_joint_order = [
+            "shoulder_pitch",
+            "shoulder_roll",
+            "elbow_yaw",
+            "elbow_pitch",
+            "wrist_roll",
+            "wrist_pitch",
+            "wrist_yaw",
+        ]
 
     def r_callback(self, msg: IKRequest) -> None:
         """Callback for the right arm (IK target)."""
@@ -166,23 +169,36 @@ class LiveDataNode(Node):
 
         self.last_l_target = M
 
-    def r_ctrl_callback(self, msg: Float64MultiArray) -> None:
-        """Callback for right controller command topic."""
+    def joint_state_callback(self, msg: JointState) -> None:
+        """Callback for joint states."""
         try:
-            arr = list(msg.data) if msg is not None else None
-            if arr is not None:
-                self.last_r_joints_topic = arr[:7] if len(arr) >= 7 else arr
-        except Exception as e:
-            self.get_logger().error(f"Failed to parse controller message on {self.r_ctrl_topic}: {e}")
+            name_to_pos = {}
+            for n, p in zip(msg.name, msg.position):
+                name_to_pos[n] = p
 
-    def l_ctrl_callback(self, msg: Float64MultiArray) -> None:
-        """Callback for left controller command topic (same handling)."""
-        try:
-            arr = list(msg.data) if msg is not None else None
-            if arr is not None:
-                self.last_l_joints_topic = arr[:7] if len(arr) >= 7 else arr
+            def extract_arm(prefix: str) -> list[Optional[float]]:
+                res: list[Optional[float]] = []
+                for joint in self._arm_joint_order:
+                    key = f"{prefix}_{joint}"
+                    val = name_to_pos.get(key)
+                    if val is None or (isinstance(val, float) and math.isnan(val)):
+                        res.append(None)
+                    else:
+                        try:
+                            res.append(float(val))
+                        except Exception:
+                            res.append(None)
+                return res
+
+            self.last_l_joints_topic = extract_arm("l")
+            self.last_r_joints_topic = extract_arm("r")
+
         except Exception as e:
-            self.get_logger().error(f"Failed to parse controller message on {self.l_ctrl_topic}: {e}")
+            self.get_logger().error(f"Failed to parse /joint_states message: {e}")
+            try:
+                self.get_logger().debug(f"JointState repr: {repr(msg)}")
+            except Exception:
+                pass
 
     def _msg_to_matrix(self, msg: IKRequest) -> Optional[npt.NDArray[np.float64]]:
         """Convert an IKRequest msg to a NumPy matrix."""

@@ -38,16 +38,17 @@ class PinocchioQPIK:
         self.joint_id = self.model.frames[self.ee_frame_id].parent
         self.IT_MAX = 100
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.Kp = 0.4  # Proportional gain
+        self.dt = 0.0035  # Time step
 
-        self.Kpc = 75000
-        self.Kdc = 2.5 * np.sqrt(self.Kpc)
-        self.Kpa = 150
+        # Proportional gains
+        self.Kp = 0.4
+        self.Kpc = 1500
+        self.Kpa = 250
+        self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.dt = 0.0025  # Time step
-        self.W = np.diag([1.725] * 3 + [0.1] * 3)
+        self.K_lim = 1
+        self.W = np.diag([1.725] * 3 + [0.1] * 3)  # (Pos/Rot) Weighting matrix
 
-        self.K_lim = 0.1
         self.q_min = np.array(
             [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
         )  # [rad]
@@ -57,6 +58,12 @@ class PinocchioQPIK:
 
         self.q_dot_max = np.array([6.5] * 7)  # [rad.s⁻¹]
         self.q_dot_min = -self.q_dot_max  # [rad.s⁻¹]
+        self.a = np.zeros(6)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+
+        self.lambda_v = 1e-6
+        self.lambda_a = 1e-9
+        self.alpha = 1e-9
+        self.beta = 5e-2
 
         if arm == "l_arm":
             # self.q0_pref = [
@@ -80,11 +87,6 @@ class PinocchioQPIK:
             #     -20.753570774218765,
             # ]
             self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
-
-        self.lambda_v = 1e-6
-        self.lambda_a = 1e-9
-        self.alpha = 1e-8
-        self.beta = 5e-2
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -256,6 +258,7 @@ class PinocchioQPIK:
 
         q = current_joints.copy()  # [rad]
         pin.framesForwardKinematics(self.model, self.data, q)
+        pin.forwardKinematics(self.model, self.data, q, q_dot)
         pin.updateFramePlacements(self.model, self.data)
         T_baselink_torso = self.data.oMf[self.model.getFrameId("torso")]
         oMdes = T_baselink_torso * oMdes_tors
@@ -270,8 +273,8 @@ class PinocchioQPIK:
         err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
 
         v = J.dot(q_dot)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
-        a = self.Kpc * err - self.Kdc * v  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
-        e_a = a - J_dot.dot(q_dot)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+        self.a = self.Kpc * err - self.Kdc * v  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
+        e_a = self.a - J_dot.dot(q_dot)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
         # QP terms
         q_ddot_posture = self.Kpa * (self.q0_pref - q) - self.Kda * q_dot  # [rad.s⁻²]
@@ -297,5 +300,16 @@ class PinocchioQPIK:
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
         if q_ddot is None:
             q_ddot = np.zeros_like(q)
+
+        # print("||J||=", np.linalg.norm(J))
+        # print("||J.T W J||=", np.linalg.norm(J.T @ self.W @ J))
+        # print("||r||=", np.linalg.norm(r))
+        # print("max |q_ddot_max|=", np.max(np.abs(q_ddot_max)))
+        # print("max |q_ddot_max_pos|=", np.max(np.abs(q_ddot_max_pos)))
+        # if self.arm == "l_arm":
+        #     print(norm(q_dot))
+        # print(v)
+        # print(e_a)
+        # print(q_ddot)
 
         return q_ddot
