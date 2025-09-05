@@ -172,26 +172,26 @@ class PinocchioControl:
                 # diffs = np.array([angle_diff(q_updated[i], q_current[i]) for i in range(7)])
                 # self.q_unwrapped[arm] += diffs * 0
 
-                self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
-                    self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
-                )
+                # self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
+                #     self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
+                # )
 
-                if emergency:
-                    print(f"[EMERGENCY STOP] {arm} joint limits reached.")
-                    print(self.emergency_state)
-                    self.running = False
-                    self.target_pose["l_arm"] = None
-                    self.target_pose["r_arm"] = None
-                    self.node.publish_joint_commands("l_arm", self.q_present["l_arm"])
-                    self.node.publish_joint_commands("r_arm", self.q_present["r_arm"])
-                    break
+                # if emergency:
+                #     print(f"[EMERGENCY STOP] {arm} joint limits reached.")
+                #     print(self.emergency_state)
+                #     self.running = False
+                #     self.target_pose["l_arm"] = None
+                #     self.target_pose["r_arm"] = None
+                #     self.node.publish_joint_commands("l_arm", self.q_present["l_arm"])
+                #     self.node.publish_joint_commands("r_arm", self.q_present["r_arm"])
+                #     break
 
-                else:
-                    with self.lock:
-                        self.q_present[arm] = q
-                        self.q_dot_present[arm] = q_dot
+                # else:
+                with self.lock:
+                    self.q_present[arm] = q
+                    self.q_dot_present[arm] = q_dot
 
-                    self.node.publish_joint_commands(arm, q)
+                self.node.publish_joint_commands(arm, q)
 
             time.sleep(max(self.dt - (time.time() - t), 0.0))
 
