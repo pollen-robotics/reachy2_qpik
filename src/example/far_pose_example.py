@@ -66,15 +66,12 @@ def main() -> None:
         np.array([0.2, -0.25, -0.58]), R.from_euler("xyz", [0, 0, 0]).as_matrix()
     )
     Mr_top = make_homogenous_matrix_from_rotation_matrix(
-        np.array([0.2, -0.25, 0.45]), R.from_euler("xyz", [0, -np.pi, 0]).as_matrix()
+        np.array([0.38, -0.2, -0.28]), R.from_euler("xyz", [0, -np.pi/2, 0]).as_matrix()
     )
 
     Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.2, 0.25, -0.58]), np.eye(3))
     Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.2, -0.25, -0.58]), np.eye(3))
-
-    reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
-    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
-    time.sleep(3)
+    
 
     Ml_top = np.array(
         [

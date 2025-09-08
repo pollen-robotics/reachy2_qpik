@@ -27,7 +27,6 @@ class PinocchioQPIK:
             locked_joints = self.default_locked_joints(arm)
 
         robot = robot.buildReducedRobot(locked_joints)
-
         self.robot = robot
         self.model, self.data, self.q0 = robot.model, robot.data, robot.q0
         self.nv = self.model.nv
@@ -42,11 +41,11 @@ class PinocchioQPIK:
 
         # Proportional gains
         self.Kp = 0.4
-        self.Kpc = 1500
-        self.Kpa = 250
+        self.Kpc = 150
+        self.Kpa = 15
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.K_lim = 1
+        self.K_lim = 0.1
         self.W = np.diag([1.725] * 3 + [0.1] * 3)  # (Pos/Rot) Weighting matrix
 
         self.q_min = np.array(
@@ -61,12 +60,12 @@ class PinocchioQPIK:
         self.a = np.zeros(6)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
         self.lambda_v = 1e-6
-        self.lambda_a = 1e-9
-        self.alpha = 1e-9
-        self.beta = 5e-2
+        self.alpha = 1e-4
+        self.lambda_a = 1e-6
+        self.beta = 1e-5
 
         if arm == "l_arm":
-            # self.q0_pref = [
+            # self.q0_pref = np.array([
             #     -0.26365717475226036,
             #     6.088962100244157,
             #     -11.43633214248595,
@@ -74,10 +73,10 @@ class PinocchioQPIK:
             #     20.753570774218765,
             #     3.8409658443799564,
             #     20.753570774218765,
-            # ]
-            self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
+            # ])
+            self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
         else:
-            # self.q0_pref = [
+            # self.q0_pref = np.array([
             #     -0.26365717475226036,
             #     -6.088962100244157,
             #     11.43633214248595,
@@ -85,8 +84,8 @@ class PinocchioQPIK:
             #     -20.753570774218765,
             #     3.8409658443799564,
             #     -20.753570774218765,
-            # ]
-            self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
+            # ])
+            self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -300,16 +299,5 @@ class PinocchioQPIK:
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
         if q_ddot is None:
             q_ddot = np.zeros_like(q)
-
-        # print("||J||=", np.linalg.norm(J))
-        # print("||J.T W J||=", np.linalg.norm(J.T @ self.W @ J))
-        # print("||r||=", np.linalg.norm(r))
-        # print("max |q_ddot_max|=", np.max(np.abs(q_ddot_max)))
-        # print("max |q_ddot_max_pos|=", np.max(np.abs(q_ddot_max_pos)))
-        # if self.arm == "l_arm":
-        #     print(norm(q_dot))
-        # print(v)
-        # print(e_a)
-        # print(q_ddot)
 
         return q_ddot

@@ -19,7 +19,6 @@ import pinocchio as pin
 import pycapacity as pycap
 
 from reachy2_qpik.pinocchio_qpik import PinocchioQPIK
-from reachy2_qpik.utils import savitzky_golay
 
 
 def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float):
@@ -46,7 +45,7 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     acc_max_neg = np.zeros(steps)
     cart_a_des = np.zeros(steps)
 
-    q0 = np.deg2rad([0, 0, -10, -90, 0, 0, 0])  # Elbow 90°
+    q0 = np.deg2rad([0, 10, -10, -90, 0, 0, 0])  # Elbow 90°
     pin.framesForwardKinematics(pinik.model, pinik.data, q0)
     pin.updateFramePlacements(pinik.model, pinik.data)
     ee_baselink = pinik.data.oMf[pinik.ee_frame_id].copy()
@@ -57,8 +56,8 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     goal_step = goal_pose.copy()
     goal_step[0, 3] += step_amp
 
-    # for j in range(pinik.nv):
-    #     buffer[j].extend([float(q0[j])] * sg_window)
+    for j in range(pinik.nv):
+        buffer[j].extend([float(q0[j])] * sg_window)
 
     q_prev = q0.copy()
     q_current = q0.copy()
@@ -78,25 +77,26 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
             goal = goal_step
             step_input[i] = step_amp
 
+        # Savitzky-Golay filter
+
+        # for j in range(pinik.nv):
+        #     buffer[j].append(q_current[j])
+
         # if len(buffer[0]) == sg_window:
         #     q_dot_smooth = np.zeros_like(q_current)
         #     for j in range(pinik.nv):
         #         arr = np.array(buffer[j])
-        #         q_dot_smooth[j] = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=1/dt)[
-        #             sg_half
-        #         ]
-        #     q_dot_current = q_dot_current
+        #         smooth_sig = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=1/ik_step)
+        #         q_dot_smooth[j] = smooth_sig[sg_half]
+        #     q_dot_current = q_dot_smooth
 
         q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
         if q_ddot is None:
             q_ddot = np.zeros_like(q_current)
 
         q_dot = q_dot_current + q_ddot * ik_step
-        # q_dot += q_ddot * ik_step
-        q = pin.integrate(pinik.model, q_current, q_dot * ik_step)
 
-        # for j in range(pinik.nv):
-        #     buffer[j].append(q[j])
+        q = pin.integrate(pinik.model, q_current, q_dot * ik_step)
 
         pin.framesForwardKinematics(pinik.model, pinik.data, q)
         pin.updateFramePlacements(pinik.model, pinik.data)
