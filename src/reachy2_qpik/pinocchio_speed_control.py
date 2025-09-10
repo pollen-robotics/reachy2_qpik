@@ -95,6 +95,7 @@ class PinocchioSpeedControl:
 
                 q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
 
+                # Speed normalization
                 limits = self.joint_velocity_limits[arm]
                 scaling = np.abs(q_dot) / limits
                 max_scaling = np.max(scaling)

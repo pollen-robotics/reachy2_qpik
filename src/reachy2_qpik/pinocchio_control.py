@@ -2,7 +2,6 @@
 
 import threading
 import time
-from collections import deque
 from typing import Optional
 
 import numpy as np
@@ -85,7 +84,7 @@ class PinocchioControl:
         """Control Loop for pose tracking."""
         start_time = 0
         loop_count = 0
-        
+
         while self.running:
             t = time.time()
             loop_count += 1
