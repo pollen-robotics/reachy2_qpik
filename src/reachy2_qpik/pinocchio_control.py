@@ -85,8 +85,7 @@ class PinocchioControl:
         """Control Loop for pose tracking."""
         start_time = 0
         loop_count = 0
-        first = True
-
+        
         while self.running:
             t = time.time()
             loop_count += 1
