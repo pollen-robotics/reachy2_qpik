@@ -10,7 +10,6 @@ import numpy.typing as npt
 import pinocchio as pin
 
 from reachy2_qpik.utils import (
-    angle_diff,
     limit_orbita3d_joints_wrist,
     multiturn_safety_check,
 )
@@ -19,18 +18,13 @@ from reachy2_qpik.utils import (
 class PinocchioControl:
     """Pinocchio Acceleration Pose Tracking Control for Reachy2."""
 
-    def __init__(self, node, ik_solver, dt: float = 1 / 500, sg_window: int = 11, sg_order: int = 3):
+    def __init__(self, node, ik_solver, dt: float = 1 / 500):
         """Initialize the class."""
         self.node = node
         self.dt = dt  # [s]
         self.lock = threading.Lock()
 
         self.q_present = {
-            "l_arm": np.zeros(7),  # [rad]
-            "r_arm": np.zeros(7),  # [rad]
-        }
-
-        self.q_unwrapped = {
             "l_arm": np.zeros(7),  # [rad]
             "r_arm": np.zeros(7),  # [rad]
         }
@@ -55,15 +49,6 @@ class PinocchioControl:
 
         self.running = True
         self.emergency_state = ""
-
-        self.sg_window = sg_window
-        self.sg_order = sg_order
-        self.sg_half = (sg_window - 1) // 2
-
-        self.buffers: dict[str, list[deque[np.float64]]] = {
-            "l_arm": [deque(maxlen=sg_window) for _ in range(7)],
-            "r_arm": [deque(maxlen=sg_window) for _ in range(7)],
-        }
 
         self._thread = threading.Thread(target=self._control_loop, daemon=True)
         self._thread.start()
@@ -131,11 +116,8 @@ class PinocchioControl:
                 q = pin.integrate(self.ik_solver[arm].model, q_current, q_dot * self.ik_step)  # [rad]
                 q = np.array(limit_orbita3d_joints_wrist(list(q), 74.17649320975901))
 
-                diffs = np.array([angle_diff(q[i], q_current[i]) for i in range(7)])
-                self.q_unwrapped[arm] += diffs
-
-                self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
-                    self.q_unwrapped[arm], 4 * np.pi, 4 * np.pi, 4 * np.pi, self.emergency_state
+                q, emergency, self.emergency_state = multiturn_safety_check(
+                    q, 4 * np.pi, 4 * np.pi, 4 * np.pi, self.emergency_state
                 )
 
                 if emergency:

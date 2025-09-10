@@ -9,7 +9,6 @@ import numpy.typing as npt
 import pinocchio as pin
 
 from reachy2_qpik.utils import (
-    angle_diff,
     limit_orbita3d_joints_wrist,
     multiturn_safety_check,
 )
@@ -32,11 +31,6 @@ class PinocchioSpeedControl:
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
             "l_arm": None,  # [m, m, m, rad, rad, rad]
             "r_arm": None,  # [m, m, m, rad, rad, rad]
-        }
-
-        self.q_unwrapped = {
-            "l_arm": np.zeros(7),  # [rad]
-            "r_arm": np.zeros(7),  # [rad]
         }
 
         self.joint_velocity_limits = {
@@ -112,11 +106,8 @@ class PinocchioSpeedControl:
 
                 q_updated = np.array(limit_orbita3d_joints_wrist(list(q_updated), 74.17649320975901))
 
-                diffs = np.array([angle_diff(q_updated[i], q_current[i]) for i in range(7)])
-                self.q_unwrapped[arm] += diffs * 0
-
-                self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
-                    self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
+                q_updated, emergency, self.emergency_state = multiturn_safety_check(
+                    q_updated, 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
                 )
 
                 if emergency:

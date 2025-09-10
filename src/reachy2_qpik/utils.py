@@ -101,13 +101,6 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve(m[::-1], y, mode="valid")
 
 
-def angle_diff(a: float, b: float) -> float:
-    """Returns the smallest distance between 2 angles."""
-    d = a - b
-    d = ((d + math.pi) % (2 * math.pi)) - math.pi
-    return d
-
-
 def multiturn_safety_check(
     joints: npt.NDArray[np.float64],
     shoulder_pitch_limit: float,
@@ -120,12 +113,12 @@ def multiturn_safety_check(
     joints = copy.deepcopy(joints)
     emergency_stop = False
     # Shoulder pitch
-    if joints[1] > shoulder_pitch_limit:
-        joints[1] = shoulder_pitch_limit
+    if joints[0] > shoulder_pitch_limit:
+        joints[0] = shoulder_pitch_limit
         emergency_state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
         emergency_stop = True
-    if joints[1] < -shoulder_pitch_limit:
-        joints[1] = -shoulder_pitch_limit
+    if joints[0] < -shoulder_pitch_limit:
+        joints[0] = -shoulder_pitch_limit
         emergency_state += "\n" + "EMERGENCY STOP: shoulder pitch limit reached"
         emergency_stop = True
     # Elbow yaw

@@ -28,13 +28,8 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     dt = 1 / 500
     steps = int(duration / dt)
 
-    sg_window = 9
-    sg_order = 3
-    sg_half = (sg_window - 1) // 2
-
     i_step_start = int(t0 / dt)
 
-    buffer: list[deque[float]] = [deque(maxlen=sg_window) for _ in range(pinik.nv)]
     t_list = np.arange(steps) * dt
     cartesian_list = np.zeros(steps)
     step_input = np.zeros(steps)
@@ -56,9 +51,6 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     goal_step = goal_pose.copy()
     goal_step[0, 3] += step_amp
 
-    for j in range(pinik.nv):
-        buffer[j].extend([float(q0[j])] * sg_window)
-
     q_prev = q0.copy()
     q_current = q0.copy()
     q_dot_current = np.zeros_like(q_current)
@@ -76,19 +68,6 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
         else:
             goal = goal_step
             step_input[i] = step_amp
-
-        # Savitzky-Golay filter
-
-        # for j in range(pinik.nv):
-        #     buffer[j].append(q_current[j])
-
-        # if len(buffer[0]) == sg_window:
-        #     q_dot_smooth = np.zeros_like(q_current)
-        #     for j in range(pinik.nv):
-        #         arr = np.array(buffer[j])
-        #         smooth_sig = savitzky_golay(arr, window_size=sg_window, deriv=1, order=sg_order, rate=1/ik_step)
-        #         q_dot_smooth[j] = smooth_sig[sg_half]
-        #     q_dot_current = q_dot_smooth
 
         q_ddot = pinik.compute_acceleration(goal, q_current, q_dot_current)
         if q_ddot is None:
