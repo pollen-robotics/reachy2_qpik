@@ -37,16 +37,16 @@ class PinocchioQPIK:
         self.joint_id = self.model.frames[self.ee_frame_id].parent
         self.IT_MAX = 100
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.dt = 0.0035  # Time step
+        self.dt = 0.002  # Time step
 
         # Proportional gains
-        self.Kp = 0.4
-        self.Kpc = 150
-        self.Kpa = 15
+        self.Kp = 0.1
+        self.Kpc = 775  # 1mm error produces a Kpc * 1mm acceleration
+        self.Kpa = 225  # 0.1 rad produces a Kpa * 0.1 rad acceleration
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.K_lim = 0.1
-        self.W = np.diag([1.725] * 3 + [0.1] * 3)  # (Pos/Rot) Weighting matrix
+        self.K_lim = 0.2
+        self.W = np.eye(6)  # (Pos/Rot) Weighting matrix
 
         self.q_min = np.array(
             [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
@@ -55,37 +55,31 @@ class PinocchioQPIK:
             [10000.0, 3.14, 10000.0, 0.06, 0.7417649320975901, 0.7417649320975901, 0.7417649320975901]
         )  # [rad]
 
-        self.q_dot_max = np.array([6.5] * 7)  # [rad.s⁻¹]
+        self.q_dot_max = np.array([6.5] * self.nv)  # [rad.s⁻¹]
         self.q_dot_min = -self.q_dot_max  # [rad.s⁻¹]
         self.a = np.zeros(6)  # [m.s⁻², m.s⁻², m.s⁻², rad.s⁻², rad.s⁻², rad.s⁻²]
 
         self.lambda_v = 1e-6
-        self.alpha = 1e-4
-        self.lambda_a = 1e-6
-        self.beta = 1e-5
+        self.alpha = 1e-5
+        self.lambda_a = 1e-7
+        self.beta = 7.5e-4
 
         if arm == "l_arm":
-            # self.q0_pref = np.array([
-            #     -0.26365717475226036,
-            #     6.088962100244157,
-            #     -11.43633214248595,
-            #     -90.00000250447816,
-            #     20.753570774218765,
-            #     3.8409658443799564,
-            #     20.753570774218765,
-            # ])
-            self.q0_pref = np.deg2rad([0, 10, -10, -90, 0, 0, 0])
+            self.q0_pref = np.deg2rad([0, 15, -11, -90, 0, 0, 0])
+            self.q_min = np.array(
+                [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
+            )  # [rad]
+            self.q_max = np.array(
+                [10000.0, 3.14, 10000.0, 0.06, 0.7417649320975901, 0.7417649320975901, 0.7417649320975901]
+            )  # [rad]
         else:
-            # self.q0_pref = np.array([
-            #     -0.26365717475226036,
-            #     -6.088962100244157,
-            #     11.43633214248595,
-            #     -90.00000250447816,
-            #     -20.753570774218765,
-            #     3.8409658443799564,
-            #     -20.753570774218765,
-            # ])
-            self.q0_pref = np.deg2rad([0, -10, 10, -90, 0, 0, 0])
+            self.q0_pref = np.deg2rad([0, -15, 11, -90, 0, 0, 0])
+            self.q_min = np.array(
+                [-10000.0, -3.14, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
+            )  # [rad]
+            self.q_max = np.array(
+                [10000.0, 0.51, 10000.0, 0.06, 0.7417649320975901, 0.7417649320975901, 0.7417649320975901]
+            )  # [rad]
 
     def default_locked_joints(self, arm: str) -> list[str]:
         """List of the default joints to lock before computation."""
@@ -244,6 +238,52 @@ class PinocchioQPIK:
 
         return q, success, state
 
+    def compute_velocity(
+        self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Compute one IK velocity step."""
+        _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
+        R_goal = goal_pose[:3, :3]
+        p_goal = goal_pose[:3, 3]
+        oMdes_torso = pin.SE3(R_goal, p_goal)
+
+        q = current_joints.copy()  # [rad]
+        pin.framesForwardKinematics(self.model, self.data, q)
+        pin.updateFramePlacements(self.model, self.data)
+
+        T_baselink_torso = self.data.oMf[self.model.getFrameId("torso")].copy()
+        oMdes = T_baselink_torso * oMdes_torso
+
+        current_ee = self.data.oMf[self.ee_frame_id]
+        iMd = current_ee.actInv(oMdes)
+        err = pin.log(iMd).vector  # [m, m, m, rad, rad, rad]
+
+        v = self.Kp * (err / self.dt)  # [m.s⁻¹, m.s⁻¹, m.s⁻¹, rad.s⁻¹, rad.s⁻¹, rad.s⁻¹]
+
+        q_dot_posture = (self.q0_pref - q) / self.dt
+
+        J = pin.computeFrameJacobian(self.model, self.data, q, self.ee_frame_id, pin.ReferenceFrame.LOCAL)
+
+        # QP terms
+        P = J.T @ self.W @ J + self.lambda_v * np.eye(self.nv) + self.alpha * np.eye(self.nv)
+        r = -J.T @ self.W @ v + -self.alpha * q_dot_posture
+
+        G_vel = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h_vel = np.hstack([self.q_dot_max, -self.q_dot_min])
+        q_dot_max_pos = (self.q_max - q) / self.dt
+        q_dot_min_pos = (self.q_min - q) / self.dt
+        G_pos = np.vstack([np.eye(self.nv), -np.eye(self.nv)])
+        h_pos = np.hstack([q_dot_max_pos, -q_dot_min_pos])
+
+        G = np.vstack([G_vel, G_pos])
+        h = np.hstack([h_vel, h_pos])
+
+        q_dot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻¹]
+        if q_dot is None:
+            q_dot, *_ = np.linalg.lstsq(J, v, rcond=None)
+
+        return q_dot
+
     def compute_acceleration(
         self,
         goal_pose: npt.NDArray[np.float64],
@@ -298,6 +338,6 @@ class PinocchioQPIK:
 
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
         if q_ddot is None:
-            q_ddot = np.zeros_like(q)
+            q_ddot, *_ = np.linalg.lstsq(J, e_a, rcond=None)
 
         return q_ddot

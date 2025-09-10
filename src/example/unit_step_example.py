@@ -45,7 +45,7 @@ def unit_step(pinik: PinocchioQPIK, step_amp: float, duration: float, t0: float)
     acc_max_neg = np.zeros(steps)
     cart_a_des = np.zeros(steps)
 
-    q0 = np.deg2rad([0, 10, -10, -90, 0, 0, 0])  # Elbow 90°
+    q0 = np.deg2rad([0, 15, -11, -90, 0, 0, 0])  # Elbow 90°
     pin.framesForwardKinematics(pinik.model, pinik.data, q0)
     pin.updateFramePlacements(pinik.model, pinik.data)
     ee_baselink = pinik.data.oMf[pinik.ee_frame_id].copy()

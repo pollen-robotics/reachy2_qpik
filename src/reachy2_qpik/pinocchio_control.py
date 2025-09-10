@@ -132,10 +132,10 @@ class PinocchioControl:
                 q = np.array(limit_orbita3d_joints_wrist(list(q), 74.17649320975901))
 
                 diffs = np.array([angle_diff(q[i], q_current[i]) for i in range(7)])
-                self.q_unwrapped[arm] += diffs * 0
+                self.q_unwrapped[arm] += diffs
 
                 self.q_unwrapped[arm], emergency, self.emergency_state = multiturn_safety_check(
-                    self.q_unwrapped[arm], 6 * np.pi, 6 * np.pi, 6 * np.pi, self.emergency_state
+                    self.q_unwrapped[arm], 4 * np.pi, 4 * np.pi, 4 * np.pi, self.emergency_state
                 )
 
                 if emergency:
