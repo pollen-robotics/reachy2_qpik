@@ -9,8 +9,6 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 ![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/FabienDanieau/58642e8fe4589e710e26627e39ff92d7/raw/covbadge.json)
 ![Docs](https://github.com/pollen-robotics/python-template/actions/workflows/docs.yml/badge.svg)
 
-
-
 <p align="center">
   <img width="346" height="461" alt="Reachy 2 Heart GIF" src="https://github.com/user-attachments/assets/fd3be9ea-df6f-410e-a7e1-3bdb481a22ce"/>
 </p>
@@ -25,6 +23,7 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 | [Usage](#usage)                         | How to import and use the package                    |
 | [Unit tests](#unit-tests)               | How to run online unit tests                         |
 | [URDF](#urdf)                           | Location of the robot description file (URDF)        |
+| [Contribution](#contribution)           | How to contribute to the repository                  |
 | [License](#license)                     | Licensing information                                |
 
 ## Key features
@@ -77,6 +76,13 @@ python3 -m pytest -m online
 ## URDF
 
 A URDF file is provided in ['src/config_files/reachy.urdf'](./src/config_files/reachy.urdf).
+
+## Contribution
+
+All contributions are welcome!  
+
+* **Report Issues**: Found a bug or have a feature request? Create a new issue [here](https://github.com/pollen-robotics/reachy2_qpik/issues/new/choose).  
+* **Fix Bugs & Add Features**: Find out where you can lend a hand by checking out [existing issues](https://github.com/pollen-robotics/reachy2_qpik/issues).
 
 ## License
 

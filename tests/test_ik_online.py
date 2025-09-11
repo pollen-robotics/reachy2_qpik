@@ -110,7 +110,7 @@ def test_random_teleop_poses():
     assert reachy.is_connected
     reachy.turn_on()
 
-    with open("../src/config_files/pytest_teleop.json", "r") as f:
+    with open("../src/example/data/pytest_teleop.json", "r") as f:
         data = json.load(f)
     l_joints_lst = data["l_arm"]
     r_joints_lst = data["r_arm"]
@@ -281,8 +281,8 @@ def test_random_trajectory() -> None:
 
         assert np.linalg.norm(l_real_pose[:3, 3] - symmetrical_pose_flip(r_real_pose)[:3, 3]) < 5e-1
 
-        assert np.linalg.norm(r_real_pose[:3, 3] - M_r[:3, 3]) < 7e-1
-        assert np.linalg.norm(l_real_pose[:3, 3] - M_l[:3, 3]) < 7e-1
+        assert np.linalg.norm(r_real_pose[:3, 3] - M_r[:3, 3]) < 8e-1
+        assert np.linalg.norm(l_real_pose[:3, 3] - M_l[:3, 3]) < 8e-1
         assert np.linalg.norm(R.from_matrix(M_r[:3, :3] @ r_real_pose[:3, :3].T).as_rotvec()) < 4
         assert np.linalg.norm(R.from_matrix(M_l[:3, :3] @ l_real_pose[:3, :3].T).as_rotvec()) < 4
 

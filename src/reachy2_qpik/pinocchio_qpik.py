@@ -40,12 +40,12 @@ class PinocchioQPIK:
         self.dt = 0.002  # Time step
 
         # Proportional gains
-        self.Kp = 0.1
+        self.Kp = 0.35
         self.Kpc = 775  # 1mm error produces a Kpc * 1mm acceleration
         self.Kpa = 225  # 0.1 rad produces a Kpa * 0.1 rad acceleration
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.K_lim = 1.0
+        self.K_lim = 0.2
         self.W = np.eye(6)  # (Pos/Rot) Weighting matrix
 
         self.q_min = np.array(
@@ -335,6 +335,5 @@ class PinocchioQPIK:
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
         if q_ddot is None:
             q_ddot, *_ = np.linalg.lstsq(J, e_a, rcond=None)
-            print("AAAAAAAAAAAAAAAAA")
 
         return q_ddot
