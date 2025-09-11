@@ -45,7 +45,7 @@ class PinocchioQPIK:
         self.Kpa = 225  # 0.1 rad produces a Kpa * 0.1 rad acceleration
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.K_lim = 1.
+        self.K_lim = 1.0
         self.W = np.eye(6)  # (Pos/Rot) Weighting matrix
 
         self.q_min = np.array(
