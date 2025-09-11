@@ -1,4 +1,4 @@
-"""Pinocchio IK far pose example."""
+"""Pinocchio IK basic poses example."""
 
 import time
 

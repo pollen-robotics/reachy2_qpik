@@ -187,9 +187,9 @@ def main() -> None:
     Ml_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, 0.25, -0.2]), rotation_matrix)
     Mr_0 = make_homogenous_matrix_from_rotation_matrix(np.array([0.4, -0.25, -0.2]), rotation_matrix)
 
-    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space", duration=4)
-    reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space", duration=4)
-    time.sleep(3)
+    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space", duration=3)
+    reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space", duration=3)
+    time.sleep(4)
     make_circle(reachy, center, orientation, radius, collect_data=False)
 
     time.sleep(2)

@@ -61,8 +61,8 @@ class PinocchioQPIK:
 
         self.lambda_v = 1e-6
         self.alpha = 1e-5
-        self.lambda_a = 1e-7
-        self.beta = 7.5e-3
+        self.lambda_a = 1e-6
+        self.beta = 7.5e-2
 
         if arm == "l_arm":
             self.q0_pref = np.deg2rad([0, 15, -11, -90, 0, 0, 0])

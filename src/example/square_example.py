@@ -80,9 +80,6 @@ def make_line(
         l_pose = make_homogenous_matrix_from_rotation_matrix(l_position, l_rotation_matrix)
         go_to_pose(reachy, l_pose, "l_arm")
 
-        # r_real_pose = reachy.r_arm.forward_kinematics()
-        # l_real_pose = reachy.l_arm.forward_kinematics()
-
         # print(f"Loop time: {(time.time() - t)*1000:.1f} ms")
         time.sleep(max(dt - (time.time() - t), 0.0))
 

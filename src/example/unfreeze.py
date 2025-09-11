@@ -23,12 +23,7 @@ def main_test() -> None:
         print("Failed to connect to Reachy, exiting...")
         return
 
-    # start_pose = np.array([[0.38, -0.2, -0.28], [0, -np.pi / 2, 0]])
     pose = reachy.r_arm.forward_kinematics()
-    # end_pose = np.array([[0.0001, -0.2, -0.6599], [0, 0, 0]])
-    # make_line(reachy, start_pose, end_pose)
-    # rotation_matrix = R.from_euler("xyz", start_pose[1]).as_matrix()
-    # pose = make_homogenous_matrix_from_rotation_matrix(start_pose[0], rotation_matrix)
     request = ArmCartesianGoal(
         id=reachy.r_arm._part_id,
         goal_pose=Matrix4x4(data=pose.flatten().tolist()),

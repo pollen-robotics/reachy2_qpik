@@ -10,7 +10,6 @@
 
 import argparse
 import time
-from collections import deque
 
 import matplotlib.pyplot as plt
 import numpy as np
