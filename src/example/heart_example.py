@@ -91,8 +91,8 @@ def draw_heart(
 
     M_l0 = make_homogenous_matrix_from_rotation_matrix(l_R, left_positions[0])
     M_r0 = make_homogenous_matrix_from_rotation_matrix(r_R, right_positions[0])
-    reachy.l_arm.goto(M_l0, interpolation_space="cartesian_space", duration=4)
-    reachy.r_arm.goto(M_r0, interpolation_space="cartesian_space", duration=4)
+    reachy.l_arm.goto(M_l0, interpolation_space="cartesian_space", duration=3)
+    reachy.r_arm.goto(M_r0, interpolation_space="cartesian_space", duration=3, wait=True)
     time.sleep(1.5)
 
     for i in range(number_of_turns):

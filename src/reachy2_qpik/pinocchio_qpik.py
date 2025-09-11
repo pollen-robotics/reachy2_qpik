@@ -45,7 +45,7 @@ class PinocchioQPIK:
         self.Kpa = 225  # 0.1 rad produces a Kpa * 0.1 rad acceleration
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
-        self.K_lim = 0.2
+        self.K_lim = 1.
         self.W = np.eye(6)  # (Pos/Rot) Weighting matrix
 
         self.q_min = np.array(
@@ -61,8 +61,8 @@ class PinocchioQPIK:
 
         self.lambda_v = 1e-6
         self.alpha = 1e-5
-        self.lambda_a = 1e-6
-        self.beta = 7.5e-2
+        self.lambda_a = 1e-7
+        self.beta = 6e-4
 
         if arm == "l_arm":
             self.q0_pref = np.deg2rad([0, 15, -11, -90, 0, 0, 0])
@@ -335,5 +335,6 @@ class PinocchioQPIK:
         q_ddot = qpsolvers.solve_qp(P, r, G, h, solver="quadprog")  # [rad.s⁻²]
         if q_ddot is None:
             q_ddot, *_ = np.linalg.lstsq(J, e_a, rcond=None)
+            print("AAAAAAAAAAAAAAAAA")
 
         return q_ddot

@@ -8,10 +8,7 @@ import numpy as np
 import numpy.typing as npt
 import pinocchio as pin
 
-from reachy2_qpik.utils import (
-    limit_orbita3d_joints_wrist,
-    multiturn_safety_check,
-)
+from reachy2_qpik.utils import limit_orbita3d_joints_wrist, multiturn_safety_check
 
 
 class PinocchioControl:
