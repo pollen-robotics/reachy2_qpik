@@ -35,7 +35,7 @@ class PinocchioIK:
         self.ee_frame_id = self.model.getFrameId(self.ee_frame)
         self.joint_id = self.model.frames[self.ee_frame_id].parent
 
-        self.IT_MAX = 1  # 00
+        self.IT_MAX = 100
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
         self.damp = 7.5e-4  # Damping factor
         self.Kp = 0.4  # Proportional gain
@@ -118,12 +118,12 @@ class PinocchioIK:
             is_reachable = False
             direction = vec / (dist + 1e-9)
             goal_position = shoulder + direction * max_arm_length
-            state = "Pose out of reach"
+            state = "Pose out of reach."
 
         if goal_position[0] < backward_limit:
             is_reachable = False
             goal_position[0] = backward_limit
-            state = state or "Backward pose"
+            state = state or "Backward pose."
 
         goal_pose[:3, 3] = goal_position
         return is_reachable, goal_pose, state
@@ -192,7 +192,7 @@ class PinocchioIK:
     def compute_velocity(
         self, goal_pose: npt.NDArray[np.float64], current_joints: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
-        """Compute one IK velocity step."""
+        """Compute one IK velocity step (CLIK)."""
         _, goal_pose, _ = self.is_pose_in_robot_reach(goal_pose)
         R_goal = goal_pose[:3, :3]
         p_goal = goal_pose[:3, 3]

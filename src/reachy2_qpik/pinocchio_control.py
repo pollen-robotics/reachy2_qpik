@@ -23,6 +23,9 @@ class PinocchioControl:
         self.dt = dt  # [s]
         self.lock = threading.Lock()
 
+        self.ik_solver = ik_solver
+        self.ik_step = ik_solver["r_arm"].dt  # [s]
+
         self.q_present = {
             "l_arm": np.zeros(7),  # [rad]
             "r_arm": np.zeros(7),  # [rad]
@@ -34,17 +37,14 @@ class PinocchioControl:
         }
 
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
-            "l_arm": None,  # [m, m, m, rad, rad, rad]
-            "r_arm": None,  # [m, m, m, rad, rad, rad]
+            "l_arm": None,
+            "r_arm": None,
         }
 
         self.joint_velocity_limits = {
             "l_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
             "r_arm": np.array([7.3] * 7),  # [rad.s⁻¹]
         }
-
-        self.ik_solver = ik_solver
-        self.ik_step = ik_solver["r_arm"].dt  # [s]
 
         self.running = True
         self.emergency_state = ""
@@ -53,7 +53,7 @@ class PinocchioControl:
         self._thread.start()
 
     def _update_joints(self, current_pos: dict[str, float]):
-        """Updates the joints values."""
+        """Update the joints values."""
         r_arm_joints = [
             "r_shoulder_pitch",
             "r_shoulder_roll",
@@ -124,8 +124,8 @@ class PinocchioControl:
                     self.running = False
                     self.target_pose["l_arm"] = None
                     self.target_pose["r_arm"] = None
-                    self.node.publish_joint_commands("l_arm", self.q_present["l_arm"])
-                    self.node.publish_joint_commands("r_arm", self.q_present["r_arm"])
+                    self.node.publish_joint_commands("l_arm", q)
+                    self.node.publish_joint_commands("r_arm", q)
                     break
 
                 else:
@@ -150,7 +150,7 @@ class PinocchioControl:
         q_dot_current: npt.NDArray[np.float64],
         target_pose: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Update the joint velocities at each tick."""
+        """Update the joint accelerations at each tick."""
         try:
             q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_dot_current)
 

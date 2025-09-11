@@ -154,12 +154,12 @@ class PinocchioQPIK:
             is_reachable = False
             direction = vec / (dist + 1e-9)
             goal_position = shoulder + direction * max_arm_length
-            state = "Pose out of reach"
+            state = "Pose out of reach."
 
         if goal_position[0] < backward_limit:
             is_reachable = False
             goal_position[0] = backward_limit
-            state = state or "Backward pose"
+            state = state or "Backward pose."
 
         goal_pose[:3, 3] = goal_position
         return is_reachable, goal_pose, state
