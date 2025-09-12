@@ -37,23 +37,16 @@ class PinocchioQPIK:
         self.joint_id = self.model.frames[self.ee_frame_id].parent
         self.IT_MAX = 100
         self.eps = 1e-4  # Error precision (if IT_MAX >1)
-        self.dt = 0.002  # Time step
+        self.dt = 0.00224  # Time step
 
         # Proportional gains
         self.Kp = 0.35
-        self.Kpc = 775  # 1mm error produces a Kpc * 1mm acceleration
+        self.Kpc = 875  # 1mm error produces a Kpc * 1mm acceleration
         self.Kpa = 225  # 0.1 rad produces a Kpa * 0.1 rad acceleration
         self.Kdc = 2 * np.sqrt(self.Kpc)
         self.Kda = 2 * np.sqrt(self.Kpa)
         self.K_lim = 0.2
         self.W = np.eye(6)  # (Pos/Rot) Weighting matrix
-
-        self.q_min = np.array(
-            [-10000.0, -0.51, -10000.0, -2.26, -0.7417649320975901, -0.7417649320975901, -0.7417649320975901]
-        )  # [rad]
-        self.q_max = np.array(
-            [10000.0, 3.14, 10000.0, 0.06, 0.7417649320975901, 0.7417649320975901, 0.7417649320975901]
-        )  # [rad]
 
         self.q_dot_max = np.array([6.5] * self.nv)  # [rad.s⁻¹]
         self.q_dot_min = -self.q_dot_max  # [rad.s⁻¹]
@@ -61,7 +54,7 @@ class PinocchioQPIK:
 
         self.lambda_v = 1e-6
         self.alpha = 1e-5
-        self.lambda_a = 1e-7
+        self.lambda_a = 1e-6
         self.beta = 6e-4
 
         if arm == "l_arm":

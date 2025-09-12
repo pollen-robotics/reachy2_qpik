@@ -134,9 +134,9 @@ class PinocchioControl:
 
             time.sleep(max(self.dt - (time.time() - t), 0.0))
 
-            if time.time() - start_time >= 1.0:
-                # freq = loop_count / (time.time() - start_time)
-                # print(f"Frequency: {freq:.2f} Hz")
+            if time.time() - start_time >= 0.2:
+                freq = loop_count / (time.time() - start_time)
+                print(f"Frequency: {freq:.2f} Hz")
                 loop_count = 0
                 start_time = time.time()
 

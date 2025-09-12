@@ -59,7 +59,7 @@ Check the [example](./src/example) folder for complete examples.
 
 ## Unit tests
 
-To ensure everything is functionning correctly, you can run unit tests. The tests need to be done **online**: they require a connection to a simulated robot (e.g., in rviz), and the virtual robot should exhibit movement during these tests.
+To ensure everything is functionning correctly, you can run unit tests. The tests need to be done **online**: they require a connection to a simulated robot (e.g., in RViZ), and the virtual robot should exhibit movement during these tests.
 
 Example:
 

@@ -188,7 +188,7 @@ def main() -> None:
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
     time.sleep(3)
 
-    make_line(reachy, start_pose, end_pose, collect_data=False)
+    make_line(reachy, start_pose, end_pose, collect_data=True)
     time.sleep(2)
 
     reachy.turn_off()
