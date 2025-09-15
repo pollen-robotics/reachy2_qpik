@@ -9,7 +9,15 @@ from scipy.spatial.transform import Rotation as R
 
 
 def limit_orbita3d_joints(joints: list[float], orbita3D_max_angle: float) -> list[float]:
-    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D. i.e. casting into Orbita's cone."""
+    """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D. i.e. casting into Orbita's cone.
+
+    Args:
+        joints (list[float]): List of joint values [roll, pitch, yaw] in radians.
+        orbita3D_max_angle (float): Maximum allowed polar angle for Orbita3D [rad].
+
+    Returns:
+        list[float]: Adjusted [roll, pitch, yaw] values within the valid cone.
+    """
     joints = copy.deepcopy(joints)
     rotation = R.from_euler("XYZ", [joints[0], joints[1], joints[2]], degrees=False)
     new_joints = rotation.as_euler("ZYZ", degrees=False)
@@ -22,7 +30,15 @@ def limit_orbita3d_joints(joints: list[float], orbita3D_max_angle: float) -> lis
 
 def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) -> list[float]:
     """Casts the 3 orientations to ensure the orientation is reachable by an Orbita3D using the wrist conventions.
-    i.e. casting into Orbita's cone."""
+    i.e. casting into Orbita's cone.
+
+    Args:
+        joints (list[float]): Full list of joint values for the arm (7 values).
+        orbita3D_max_angle (float): Maximum allowed polar angle for Orbita3D [rad].
+
+    Returns:
+        list[float]: Adjusted joint values with wrist within the valid cone.
+    """
     joints = copy.deepcopy(joints)
     wrist_joints = joints[4:7]
 
@@ -34,48 +50,20 @@ def limit_orbita3d_joints_wrist(joints: list[float], orbita3D_max_angle: float) 
 
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-    """Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
+    """Smooth (and optionally differentiate) a signal with a Savitzky-Golay filter.
 
-    The Savitzky-Golay filter removes high frequency noise from data.
-    It has the advantage of preserving the original shape and
-    features of the signal better than other types of filtering
-    approaches, such as moving averages techniques.
+    This filter removes high-frequency noise while preserving the shape
+    and features of the signal. Optionally, it can compute the nth derivative.
 
-    Parameters
-    ----------
-    y : array_like, shape (N,)
-        the values of the time history of the signal.
-    window_size : int
-        the length of the window. Must be an odd integer number.
-    order : int
-        the order of the polynomial used in the filtering.
-        Must be less then `window_size` - 1.
-    deriv: int
-        the order of the derivative to compute (default = 0 means only smoothing)
-    rate: int
-        the rate.
+    Args:
+        y (array_like): Input signal, shape (N,).
+        window_size (int): Length of the filter window (odd number).
+        order (int): Order of the polynomial used in the filtering (must be < `window_size` - 1).
+        deriv (int, optional): Order of the derivative to compute. Defaults to 0 (only smoothing).
+        rate (int, optional): Sample rate multiplier. Defaults to 1.
 
-    Returns
-    -------
-    ys : ndarray, shape (N)
-        the smoothed signal (or it's n-th derivative).
-
-    Notes
-    -----
-    The Savitzky-Golay is a type of low-pass filter, particularly
-    suited for smoothing noisy data. The main idea behind this
-    approach is to make for each point a least-square fit with a
-    polynomial of high order over a odd-sized window centered at
-    the point.
-
-    References
-    ----------
-    .. [1] A. Savitzky, M. J. E. Golay, Smoothing and Differentiation of
-       Data by Simplified Least Squares Procedures. Analytical
-       Chemistry, 1964, 36 (8), pp 1627-1639.
-    .. [2] Numerical Recipes 3rd Edition: The Art of Scientific Computing
-       W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery
-       Cambridge University Press ISBN-13: 9780521880688
+    Returns:
+        numpy.ndarray: Smoothed signal (or its nth derivative).
     """
     try:
         window_size = np.abs(int(window_size))
@@ -108,7 +96,21 @@ def multiturn_safety_check(
     wrist_yaw_limit: float,
     emergency_state: str,
 ) -> tuple[npt.NDArray[np.float64], bool, str]:
-    """Limit the number of turns allowed on the joints."""
+    """Limit the number of turns allowed on the joints and detect violations.
+
+    Args:
+        joints (numpy.ndarray): Current joint positions [rad].
+        shoulder_pitch_limit (float): Maximum absolute allowed shoulder pitch angle [rad].
+        elbow_yaw_limit (float): Maximum absolute allowed elbow yaw angle [rad].
+        wrist_yaw_limit (float): Maximum absolute allowed wrist yaw angle [rad].
+        emergency_state (str): Previous emergency state message (if any).
+
+    Returns:
+        tuple:
+            - numpy.ndarray: Adjusted joint positions (clamped to limits).
+            - bool: True if an emergency stop condition was triggered.
+            - str: Updated emergency state message.
+    """
     # print(f"[{joints[1]:.2f},{joints[2]:.2f},{joints[6]:.2f}]")
     joints = copy.deepcopy(joints)
     emergency_stop = False

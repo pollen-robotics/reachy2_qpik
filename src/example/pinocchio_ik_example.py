@@ -4,15 +4,15 @@ import numpy as np
 import pinocchio as pin
 from scipy.spatial.transform import Rotation as R
 
-from reachy2_qpik.pinocchio_ik import PinocchioIK
+from reachy2_qpik.reachy2_clik import Reachy2CLIK
 
 
 def main() -> None:
     """Run the main function."""
     urdf_path = r"../config_files/reachy.urdf"
 
-    pinik_l = PinocchioIK(urdf_path=urdf_path, arm="l_arm")
-    pinik_r = PinocchioIK(urdf_path=urdf_path, arm="r_arm")
+    pinik_l = Reachy2CLIK(urdf_path=urdf_path, arm="l_arm")
+    pinik_r = Reachy2CLIK(urdf_path=urdf_path, arm="r_arm")
 
     rotation_matrix = R.from_euler("xyz", [0, 0, 0], degrees=True).as_matrix()
     position = np.array([9.98901949e-03, -2.56649267e-01, -6.57488464e-01])

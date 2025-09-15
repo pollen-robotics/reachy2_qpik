@@ -103,8 +103,8 @@ def main() -> None:
     time.sleep(2)
 
     reachy.l_arm.goto(Ml_0, interpolation_space="cartesian_space")
-    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space")
-    time.sleep(3)
+    reachy.r_arm.goto(Mr_0, interpolation_space="cartesian_space", wait=True)
+    time.sleep(2)
 
     reachy.turn_off()
 

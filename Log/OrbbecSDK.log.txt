@@ -1002,3 +1002,57 @@
 [09/11 13:31:22.541302][info][12291][DeviceManager.cpp:15] Current found device(s): (0)
 [09/11 13:31:22.541434][debug][12291][DeviceManager.cpp:52] DeviceManager construct done!
 [09/11 13:31:22.542586][info][12291][DeviceManager.cpp:304] Enable net device enumeration: false
+[09/15 10:50:33.388148][debug][5886][Context.cpp:30] Context creating, work_dir=/home/reachy/dev/reachy2_qpik
+[09/15 10:50:33.396119][debug][5886][Context.cpp:49] Config file version=1.1
+[09/15 10:50:33.396161][debug][5886][FrameBufferManager.cpp:23] Max global frame buffer size updated! size=2048.000MB
+[09/15 10:50:33.396179][info][5886][Context.cpp:68] Context created with config: /home/reachy/reachy_ws/install/orbbec_camera/share/orbbec_camera/config/OrbbecSDKConfig_v1.0.xml
+[09/15 10:50:33.396210][info][5886][Context.cpp:73] Work directory=/home/reachy/dev/reachy2_qpik, SDK version=v1.10.18-20250103-27bf2f6
+[09/15 10:50:33.396228][debug][5886][DeviceManager.cpp:30] DeviceManager init ...
+[09/15 10:50:33.396232][info][5886][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[09/15 10:50:33.397071][debug][5886][DeviceManager.cpp:34] Enable USB Device Enumerator ...
+[09/15 10:50:33.397104][debug][5886][EnumeratorLibusb.cpp:324] queryDevicesInfo done!
+[09/15 10:50:33.397150][info][5886][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[09/15 10:50:33.397191][debug][5886][UsbDeviceEnumerator.cpp:78] No matched usb device found!
+[09/15 10:50:33.397203][info][5886][DeviceManager.cpp:15] Current found device(s): (0)
+[09/15 10:50:33.397208][debug][5886][DeviceManager.cpp:52] DeviceManager construct done!
+[09/15 10:50:33.400314][info][5886][DeviceManager.cpp:304] Enable net device enumeration: false
+[09/15 10:50:38.643629][debug][5886][Context.cpp:81] Context destroying ...
+[09/15 10:50:38.643859][debug][5886][DeviceManager.cpp:56] DeviceManager destroy ...
+[09/15 10:50:38.643872][debug][5886][DeviceManager.cpp:64] DeviceManager Destructors done
+[09/15 10:50:38.644095][info][5886][Context.cpp:84] Context destroyed
+[09/15 10:51:13.934360][debug][6602][Context.cpp:30] Context creating, work_dir=/home/reachy/dev/reachy2_qpik
+[09/15 10:51:13.934440][debug][6602][Context.cpp:49] Config file version=1.1
+[09/15 10:51:13.934460][debug][6602][FrameBufferManager.cpp:23] Max global frame buffer size updated! size=2048.000MB
+[09/15 10:51:13.934468][info][6602][Context.cpp:68] Context created with config: /home/reachy/reachy_ws/install/orbbec_camera/share/orbbec_camera/config/OrbbecSDKConfig_v1.0.xml
+[09/15 10:51:13.935446][info][6602][Context.cpp:73] Work directory=/home/reachy/dev/reachy2_qpik, SDK version=v1.10.18-20250103-27bf2f6
+[09/15 10:51:13.935479][debug][6602][DeviceManager.cpp:30] DeviceManager init ...
+[09/15 10:51:13.935486][info][6602][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[09/15 10:51:13.936722][debug][6602][DeviceManager.cpp:34] Enable USB Device Enumerator ...
+[09/15 10:51:13.937415][debug][6602][EnumeratorLibusb.cpp:324] queryDevicesInfo done!
+[09/15 10:51:13.937599][info][6602][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[09/15 10:51:13.937884][debug][6602][UsbDeviceEnumerator.cpp:78] No matched usb device found!
+[09/15 10:51:13.937996][info][6602][DeviceManager.cpp:15] Current found device(s): (0)
+[09/15 10:51:13.938099][debug][6602][DeviceManager.cpp:52] DeviceManager construct done!
+[09/15 10:51:13.941338][info][6602][DeviceManager.cpp:304] Enable net device enumeration: false
+[09/15 10:52:02.822918][debug][6602][Context.cpp:81] Context destroying ...
+[09/15 10:52:02.822986][debug][6602][DeviceManager.cpp:56] DeviceManager destroy ...
+[09/15 10:52:02.823001][debug][6602][DeviceManager.cpp:64] DeviceManager Destructors done
+[09/15 10:52:02.823562][info][6602][Context.cpp:84] Context destroyed
+[09/15 10:52:20.349720][debug][7369][Context.cpp:30] Context creating, work_dir=/home/reachy/dev/reachy2_qpik
+[09/15 10:52:20.349796][debug][7369][Context.cpp:49] Config file version=1.1
+[09/15 10:52:20.349822][debug][7369][FrameBufferManager.cpp:23] Max global frame buffer size updated! size=2048.000MB
+[09/15 10:52:20.349829][info][7369][Context.cpp:68] Context created with config: /home/reachy/reachy_ws/install/orbbec_camera/share/orbbec_camera/config/OrbbecSDKConfig_v1.0.xml
+[09/15 10:52:20.349848][info][7369][Context.cpp:73] Work directory=/home/reachy/dev/reachy2_qpik, SDK version=v1.10.18-20250103-27bf2f6
+[09/15 10:52:20.349862][debug][7369][DeviceManager.cpp:30] DeviceManager init ...
+[09/15 10:52:20.349871][info][7369][LinuxPal.cpp:32] createObPal: create LinuxPal!
+[09/15 10:52:20.351623][debug][7369][DeviceManager.cpp:34] Enable USB Device Enumerator ...
+[09/15 10:52:20.351764][debug][7369][EnumeratorLibusb.cpp:324] queryDevicesInfo done!
+[09/15 10:52:20.351904][info][7369][LinuxPal.cpp:166] Create PollingDeviceWatcher!
+[09/15 10:52:20.352018][debug][7369][UsbDeviceEnumerator.cpp:78] No matched usb device found!
+[09/15 10:52:20.352117][info][7369][DeviceManager.cpp:15] Current found device(s): (0)
+[09/15 10:52:20.352249][debug][7369][DeviceManager.cpp:52] DeviceManager construct done!
+[09/15 10:52:20.354835][info][7369][DeviceManager.cpp:304] Enable net device enumeration: false
+[09/15 11:02:51.455027][debug][7369][Context.cpp:81] Context destroying ...
+[09/15 11:02:51.455095][debug][7369][DeviceManager.cpp:56] DeviceManager destroy ...
+[09/15 11:02:51.455106][debug][7369][DeviceManager.cpp:64] DeviceManager Destructors done
+[09/15 11:02:51.455368][info][7369][Context.cpp:84] Context destroyed

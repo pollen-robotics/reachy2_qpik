@@ -1,4 +1,4 @@
-"""Pinocchio IK Acceleration Control Loop."""
+"""Pinocchio IK Speed Control Loop."""
 
 import threading
 import time
@@ -11,11 +11,24 @@ import pinocchio as pin
 from reachy2_qpik.utils import limit_orbita3d_joints_wrist, multiturn_safety_check
 
 
-class PinocchioControl:
-    """Pinocchio Acceleration Pose Tracking Control for Reachy2."""
+class Reachy2SpeedControl:
+    """Real-time speed-based pose tracking control for Reachy2.
+
+    This class continuously updates the joint positions using an IK solver,
+    applies velocity normalization and joint limits, and publishes commands
+    to the robot through pollen_kdl_kinematics_node.py.
+    """
 
     def __init__(self, node, ik_solver, dt: float = 1 / 500):
-        """Initialize the class."""
+        """Initialize the Reachy2SpeedControl loop.
+
+        Args:
+            node: ROS2 node or interface used to send joint commands.
+            ik_solver (dict): Dictionary of IK solvers for each arm
+                (keys: "l_arm", "r_arm").
+            dt (float, optional): Control loop period in seconds.
+                Defaults to 1/500 (500 Hz).
+        """
         self.node = node
         self.dt = dt  # [s]
         self.lock = threading.Lock()
@@ -26,11 +39,6 @@ class PinocchioControl:
         self.q_present = {
             "l_arm": np.zeros(7),  # [rad]
             "r_arm": np.zeros(7),  # [rad]
-        }
-
-        self.q_dot_present = {
-            "l_arm": np.zeros(7),  # [rad.s⁻¹]
-            "r_arm": np.zeros(7),  # [rad.s⁻¹]
         }
 
         self.target_pose: dict[str, Optional[npt.NDArray[np.float64]]] = {
@@ -50,7 +58,12 @@ class PinocchioControl:
         self._thread.start()
 
     def _update_joints(self, current_pos: dict[str, float]):
-        """Update the joints values."""
+        """Update the joint positions from the current state.
+
+        Args:
+            current_pos (dict[str, float]): Dictionary mapping joint names
+                to their current positions in radians.
+        """
         r_arm_joints = [
             "r_shoulder_pitch",
             "r_shoulder_roll",
@@ -78,7 +91,15 @@ class PinocchioControl:
             self.q_present["r_arm"] = qr
 
     def _control_loop(self):
-        """Control Loop for pose tracking."""
+        """Run the main control loop for pose tracking.
+
+        This loop:
+            - Reads the current joint states.
+            - Computes velocities using the IK solver.
+            - Applies velocity limits and integrates joint velocities.
+            - Publishes updated joint positions to the robot.
+            - Stops if multiturns are detected.
+        """
         start_time = 0
         loop_count = 0
 
@@ -87,8 +108,7 @@ class PinocchioControl:
             loop_count += 1
             for arm in ["l_arm", "r_arm"]:
                 with self.lock:
-                    q_current = self.q_present[arm].copy()  # [rad]
-                    q_dot_current = self.q_dot_present[arm].copy()  # [rad.s⁻¹]
+                    q_current = self.q_present[arm]  # [rad]
                     target = self.target_pose[arm]
 
                 if target is None:
@@ -96,9 +116,7 @@ class PinocchioControl:
 
                 target_copy = target.copy()
 
-                q_ddot = self.tick_control(arm, q_current, q_dot_current, target_copy)  # [rad.s⁻²]
-
-                q_dot = q_dot_current + q_ddot * self.ik_step  # [rad.s⁻¹]
+                q_dot = self.tick_control(arm, q_current, target_copy)  # [rad.s⁻¹]
 
                 # Speed normalization
                 limits = self.joint_velocity_limits[arm]
@@ -128,45 +146,57 @@ class PinocchioControl:
                 else:
                     with self.lock:
                         self.q_present[arm] = q
-                        self.q_dot_present[arm] = q_dot
 
                 self.node.publish_joint_commands(arm, q)
 
             time.sleep(max(self.dt - (time.time() - t), 0.0))
 
-            if time.time() - start_time >= 0.2:
-                freq = loop_count / (time.time() - start_time)
-                print(f"Frequency: {freq:.2f} Hz")
+            if time.time() - start_time >= 1.0:
+                # freq = loop_count / (time.time() - start_time)
+                # print(f"Frequency: {freq:.2f} Hz")
                 loop_count = 0
                 start_time = time.time()
 
     def tick_control(
-        self,
-        arm: str,
-        q_current: npt.NDArray[np.float64],
-        q_dot_current: npt.NDArray[np.float64],
-        target_pose: npt.NDArray[np.float64],
+        self, arm: str, q_current: npt.NDArray[np.float64], target_pose: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
-        """Update the joint accelerations at each tick."""
+        """Compute joint velocities for the current control tick.
+
+        Args:
+            arm (str): Arm name ("l_arm" or "r_arm").
+            q_current (numpy.ndarray): Current joint positions [rad].
+            target_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+
+        Returns:
+            numpy.ndarray: Computed joint velocities [rad.s⁻¹].
+        """
         try:
-            q_ddot = self.ik_solver[arm].compute_acceleration(target_pose, q_current, q_dot_current)
+            q_dot = self.ik_solver[arm].compute_velocity(target_pose, q_current)
 
-        except Exception as e:
-            print(f"Error in QP computation: {e}")
-            q_ddot = np.zeros_like(q_current)
+        except Exception:
+            q_dot = np.zeros_like(q_current)
 
-        if q_ddot is None:
-            q_ddot = np.zeros_like(q_current)
-
-        return q_ddot
+        return q_dot
 
     def set_current_goal(self, arm: str, pose: np.ndarray):
-        """Setter method for the current target pose."""
+        """Set a new target pose for the specified arm.
+
+        Args:
+            arm (str): Arm to control ("l_arm" or "r_arm").
+            pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).
+        """
         with self.lock:
             self.target_pose[arm] = pose
 
     def get_current_goal(self, arm: str) -> Optional[npt.NDArray[np.float64]]:
-        """Getter method for the current target pose."""
+        """Get the current target pose for the specified arm.
+
+        Args:
+            arm (str): Arm to query ("l_arm" or "r_arm").
+
+        Returns:
+            numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.
+        """
         with self.lock:
             target = self.target_pose[arm]
 

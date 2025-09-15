@@ -190,4 +190,23 @@ if __name__ == "__main__":
     print("Example - Making heart")
     draw_heart(reachy, collect_data=False)
 
+    time.sleep(2)
+
+    Mr_bot = make_homogenous_matrix_from_rotation_matrix(
+        R.from_euler("xyz", [0, 0, 0]).as_matrix(), np.array([0.2, -0.25, -0.58])
+    )
+
+    Ml_bot = np.array(
+        [
+            [Mr_bot[0, 0], -Mr_bot[0, 1], Mr_bot[0, 2], Mr_bot[0, 3]],
+            [-Mr_bot[1, 0], Mr_bot[1, 1], -Mr_bot[1, 2], -Mr_bot[1, 3]],
+            [Mr_bot[2, 0], -Mr_bot[2, 1], Mr_bot[2, 2], Mr_bot[2, 3]],
+            [0, 0, 0, 1],
+        ]
+    )
+
+    reachy.l_arm.goto(Ml_bot, interpolation_space="cartesian_space", duration=4)
+    reachy.r_arm.goto(Mr_bot, interpolation_space="cartesian_space", duration=4, wait=True)
+    time.sleep(2)
+
     reachy.turn_off()
