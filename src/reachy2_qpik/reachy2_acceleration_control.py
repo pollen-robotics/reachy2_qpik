@@ -163,7 +163,7 @@ class Reachy2AccelerationControl:
             if time.time() - start_time >= 0.2:
                 # freq = loop_count / (time.time() - start_time)
                 # print(f"Frequency: {freq:.2f} Hz")
-                loop_count = 0
+                # loop_count = 0
                 start_time = time.time()
 
     def tick_control(

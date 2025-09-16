@@ -101,7 +101,7 @@ class Reachy2SpeedControl:
             - Stops if multiturns are detected.
         """
         start_time = 0
-        loop_count = 0
+        # loop_count = 0
 
         while self.running:
             t = time.time()
@@ -154,7 +154,7 @@ class Reachy2SpeedControl:
             if time.time() - start_time >= 1.0:
                 # freq = loop_count / (time.time() - start_time)
                 # print(f"Frequency: {freq:.2f} Hz")
-                loop_count = 0
+                # loop_count = 0
                 start_time = time.time()
 
     def tick_control(
