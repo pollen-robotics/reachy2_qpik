@@ -105,7 +105,7 @@ class Reachy2SpeedControl:
 
         while self.running:
             t = time.time()
-            loop_count += 1
+            # loop_count += 1
             for arm in ["l_arm", "r_arm"]:
                 with self.lock:
                     q_current = self.q_present[arm]  # [rad]
