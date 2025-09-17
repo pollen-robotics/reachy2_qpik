@@ -125,8 +125,9 @@ def random_walk_test(
 def main():
     """Main function."""
     reachy = ReachySDK(host="localhost")
-    if reachy._grpc_status != "connected":
-        raise RuntimeError("Cannot connect to Reachy")
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        exit()
     reachy.turn_on()
 
     results = random_walk_test(

@@ -165,7 +165,7 @@ class Reachy2SpeedControl:
         Args:
             arm (str): Arm name ("l_arm" or "r_arm").
             q_current (numpy.ndarray): Current joint positions [rad].
-            target_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            target_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
 
         Returns:
             numpy.ndarray: Computed joint velocities [rad.s⁻¹].
@@ -183,7 +183,7 @@ class Reachy2SpeedControl:
 
         Args:
             arm (str): Arm to control ("l_arm" or "r_arm").
-            pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).
+            pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).
         """
         with self.lock:
             self.target_pose[arm] = pose
@@ -195,7 +195,7 @@ class Reachy2SpeedControl:
             arm (str): Arm to query ("l_arm" or "r_arm").
 
         Returns:
-            numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.
+            numpy.ndarray | None: Current target pose (4x4 SE(3) matrix) or None if no target is set.
         """
         with self.lock:
             target = self.target_pose[arm]

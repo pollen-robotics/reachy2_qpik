@@ -86,13 +86,14 @@ def goto_to_point(
 
 
 if __name__ == "__main__":
-    print("Pinocchio IK tests:")
+    print("Reachy2 IK tests:")
 
     logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
 
-    if not reachy.is_connected:
-        exit("Reachy is not connected.")
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        exit()
 
     print("Turning on Reachy")
     reachy.turn_on()

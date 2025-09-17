@@ -142,7 +142,7 @@ class Reachy2QPIK:
         If the pose is out of reach or behind the shoulder plane, it is adjusted.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
 
         Returns:
             tuple:
@@ -189,7 +189,7 @@ class Reachy2QPIK:
         """Get the joints from inverse kinematics using QP.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
             current_joints (numpy.ndarray): Current joint configuration (rad).
 
         Returns:
@@ -270,7 +270,7 @@ class Reachy2QPIK:
         """Compute one velocity control step.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
             current_joints (numpy.ndarray): Current joint configuration (rad).
 
         Returns:
@@ -327,7 +327,7 @@ class Reachy2QPIK:
         """Compute one acceleration control step.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
             current_joints (numpy.ndarray): Current joint configuration (rad).
             q_dot (numpy.ndarray): Current joint velocities (rad.s⁻1).
 

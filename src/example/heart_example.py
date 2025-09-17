@@ -178,8 +178,10 @@ def save_data_to_csv(data_lst, folder: str = "data", filename: str = "data.csv")
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     reachy = ReachySDK(host="localhost")
-    if not reachy.is_connected:
-        raise SystemExit("Cannot connect to Reachy.")
+    if reachy._grpc_status == "disconnected":
+        print("Failed to connect to Reachy, exiting...")
+        exit()
+    
     reachy.turn_on()
     time.sleep(0.5)
 

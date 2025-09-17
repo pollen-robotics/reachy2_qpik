@@ -113,12 +113,12 @@ class Reachy2CLIK:
         If the pose is out of reach or behind the shoulder plane, it is adjusted.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
 
         Returns:
             tuple:
                 - bool: True if the pose is reachable.
-                - numpy.ndarray: Adjusted pose (4x4 SE3 matrix).
+                - numpy.ndarray: Adjusted pose (4x4 SE(3) matrix).
                 - str: Status message ("Pose out of reach.", "Backward pose.", or "").
         """
         goal_pose = copy.deepcopy(goal_pose)
@@ -160,7 +160,7 @@ class Reachy2CLIK:
         """Get the joints from IK using CLIK.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
             current_joints (numpy.ndarray): Current joint configuration (rad).
 
         Returns:
@@ -232,7 +232,7 @@ class Reachy2CLIK:
         """Compute one velocity step for the CLIK.
 
         Args:
-            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).
+            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).
             current_joints (numpy.ndarray): Current joint configuration (rad).
 
         Returns:

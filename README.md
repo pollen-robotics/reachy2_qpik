@@ -47,6 +47,14 @@ pip install -e .[dev]
 
 _Include [dev] for optional development tools._
 
+### Requirement for running the full Reachy2 stack
+
+To launch the stack with Reachy2, make sure you are on the branch `reachy2_qpik` in the [ros2_pollen_toolbox](https://github.com/pollen-robotics/ros2_pollen_toolbox/tree/reachy2_qpik) repository:
+
+```bash
+git checkout reachy2_qpik
+```
+
 ## Usage
 
 Once this is done, you should be able to import the Python package in your codes with:
@@ -54,6 +62,21 @@ Once this is done, you should be able to import the Python package in your codes
 ```python
 import reachy2_qpik
 ```
+
+### Switching between methods
+
+The inverse kinematics solver provides multiple methods that can be selected via an enum in the [`pollen_kdl_kinematics_node.py`](https://github.com/pollen-robotics/ros2_pollen_toolbox/blob/ced8dfbd8af0eb0957ff31f64b1c9c4ec8214ae4/pollen_kdl_kinematics/pollen_kdl_kinematics/pollen_kdl_kinematics_node.py#L51-L55) file:
+
+```python
+IK_MODE = IKMode.ACCELERATION_QP  
+```
+
+Available options are:
+
+* Symbolic IK ([repository](https://github.com/pollen-robotics/reachy2_symbolic_ik))
+* CLIK
+* Speed QP
+* Acceleration QP
 
 Check the [example](./src/example) folder for complete examples.
 
