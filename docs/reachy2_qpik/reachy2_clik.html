@@ -22,7 +22,7 @@
   <path fill-rule="evenodd" d="M4.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H14.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
 </svg>                &nbsp;reachy2_qpik</a>
 
-<a href="https://www.pollen-robotics.com">            <img src="https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" class="logo" alt="project logo"/>
+<a href="https://github.com/pollen-robotics/reachy2_qpik">            <img src="https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/POLLEN_LOGO.png?raw=true" class="logo" alt="project logo"/>
 </a>
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
@@ -220,12 +220,12 @@
 </span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">        If the pose is out of reach or behind the shoulder plane, it is adjusted.</span>
 </span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>
 </span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a><span class="sd">        Args:</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>
 </span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="sd">        Returns:</span>
 </span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="sd">            tuple:</span>
 </span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="sd">                - bool: True if the pose is reachable.</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE3 matrix).</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE(3) matrix).</span>
 </span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">                - str: Status message (&quot;Pose out of reach.&quot;, &quot;Backward pose.&quot;, or &quot;&quot;).</span>
 </span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>        <span class="n">goal_pose</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">goal_pose</span><span class="p">)</span>
@@ -267,7 +267,7 @@
 </span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the joints from IK using CLIK.</span>
 </span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>
 </span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="sd">        Args:</span>
-</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>
 </span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a><span class="sd">        Returns:</span>
@@ -339,7 +339,7 @@
 </span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one velocity step for the CLIK.</span>
 </span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>
 </span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a><span class="sd">        Args:</span>
-</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a>
 </span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a><span class="sd">        Returns:</span>
@@ -486,12 +486,12 @@
 </span><span id="Reachy2CLIK-114"><a href="#Reachy2CLIK-114"><span class="linenos">114</span></a><span class="sd">        If the pose is out of reach or behind the shoulder plane, it is adjusted.</span>
 </span><span id="Reachy2CLIK-115"><a href="#Reachy2CLIK-115"><span class="linenos">115</span></a>
 </span><span id="Reachy2CLIK-116"><a href="#Reachy2CLIK-116"><span class="linenos">116</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK-117"><a href="#Reachy2CLIK-117"><span class="linenos">117</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK-117"><a href="#Reachy2CLIK-117"><span class="linenos">117</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK-118"><a href="#Reachy2CLIK-118"><span class="linenos">118</span></a>
 </span><span id="Reachy2CLIK-119"><a href="#Reachy2CLIK-119"><span class="linenos">119</span></a><span class="sd">        Returns:</span>
 </span><span id="Reachy2CLIK-120"><a href="#Reachy2CLIK-120"><span class="linenos">120</span></a><span class="sd">            tuple:</span>
 </span><span id="Reachy2CLIK-121"><a href="#Reachy2CLIK-121"><span class="linenos">121</span></a><span class="sd">                - bool: True if the pose is reachable.</span>
-</span><span id="Reachy2CLIK-122"><a href="#Reachy2CLIK-122"><span class="linenos">122</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK-122"><a href="#Reachy2CLIK-122"><span class="linenos">122</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK-123"><a href="#Reachy2CLIK-123"><span class="linenos">123</span></a><span class="sd">                - str: Status message (&quot;Pose out of reach.&quot;, &quot;Backward pose.&quot;, or &quot;&quot;).</span>
 </span><span id="Reachy2CLIK-124"><a href="#Reachy2CLIK-124"><span class="linenos">124</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2CLIK-125"><a href="#Reachy2CLIK-125"><span class="linenos">125</span></a>        <span class="n">goal_pose</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">goal_pose</span><span class="p">)</span>
@@ -533,7 +533,7 @@
 </span><span id="Reachy2CLIK-161"><a href="#Reachy2CLIK-161"><span class="linenos">161</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the joints from IK using CLIK.</span>
 </span><span id="Reachy2CLIK-162"><a href="#Reachy2CLIK-162"><span class="linenos">162</span></a>
 </span><span id="Reachy2CLIK-163"><a href="#Reachy2CLIK-163"><span class="linenos">163</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK-164"><a href="#Reachy2CLIK-164"><span class="linenos">164</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK-164"><a href="#Reachy2CLIK-164"><span class="linenos">164</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK-165"><a href="#Reachy2CLIK-165"><span class="linenos">165</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="Reachy2CLIK-166"><a href="#Reachy2CLIK-166"><span class="linenos">166</span></a>
 </span><span id="Reachy2CLIK-167"><a href="#Reachy2CLIK-167"><span class="linenos">167</span></a><span class="sd">        Returns:</span>
@@ -605,7 +605,7 @@
 </span><span id="Reachy2CLIK-233"><a href="#Reachy2CLIK-233"><span class="linenos">233</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one velocity step for the CLIK.</span>
 </span><span id="Reachy2CLIK-234"><a href="#Reachy2CLIK-234"><span class="linenos">234</span></a>
 </span><span id="Reachy2CLIK-235"><a href="#Reachy2CLIK-235"><span class="linenos">235</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK-236"><a href="#Reachy2CLIK-236"><span class="linenos">236</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK-236"><a href="#Reachy2CLIK-236"><span class="linenos">236</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK-237"><a href="#Reachy2CLIK-237"><span class="linenos">237</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="Reachy2CLIK-238"><a href="#Reachy2CLIK-238"><span class="linenos">238</span></a>
 </span><span id="Reachy2CLIK-239"><a href="#Reachy2CLIK-239"><span class="linenos">239</span></a><span class="sd">        Returns:</span>
@@ -918,12 +918,12 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-114"><a href="#Reachy2CLIK.is_pose_in_robot_reach-114"><span class="linenos">114</span></a><span class="sd">        If the pose is out of reach or behind the shoulder plane, it is adjusted.</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-115"><a href="#Reachy2CLIK.is_pose_in_robot_reach-115"><span class="linenos">115</span></a>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-116"><a href="#Reachy2CLIK.is_pose_in_robot_reach-116"><span class="linenos">116</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK.is_pose_in_robot_reach-117"><a href="#Reachy2CLIK.is_pose_in_robot_reach-117"><span class="linenos">117</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK.is_pose_in_robot_reach-117"><a href="#Reachy2CLIK.is_pose_in_robot_reach-117"><span class="linenos">117</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-118"><a href="#Reachy2CLIK.is_pose_in_robot_reach-118"><span class="linenos">118</span></a>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-119"><a href="#Reachy2CLIK.is_pose_in_robot_reach-119"><span class="linenos">119</span></a><span class="sd">        Returns:</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-120"><a href="#Reachy2CLIK.is_pose_in_robot_reach-120"><span class="linenos">120</span></a><span class="sd">            tuple:</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-121"><a href="#Reachy2CLIK.is_pose_in_robot_reach-121"><span class="linenos">121</span></a><span class="sd">                - bool: True if the pose is reachable.</span>
-</span><span id="Reachy2CLIK.is_pose_in_robot_reach-122"><a href="#Reachy2CLIK.is_pose_in_robot_reach-122"><span class="linenos">122</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK.is_pose_in_robot_reach-122"><a href="#Reachy2CLIK.is_pose_in_robot_reach-122"><span class="linenos">122</span></a><span class="sd">                - numpy.ndarray: Adjusted pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-123"><a href="#Reachy2CLIK.is_pose_in_robot_reach-123"><span class="linenos">123</span></a><span class="sd">                - str: Status message (&quot;Pose out of reach.&quot;, &quot;Backward pose.&quot;, or &quot;&quot;).</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-124"><a href="#Reachy2CLIK.is_pose_in_robot_reach-124"><span class="linenos">124</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2CLIK.is_pose_in_robot_reach-125"><a href="#Reachy2CLIK.is_pose_in_robot_reach-125"><span class="linenos">125</span></a>        <span class="n">goal_pose</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">goal_pose</span><span class="p">)</span>
@@ -968,7 +968,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 <h6 id="arguments">Arguments:</h6>
 
 <ul>
-<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE3 matrix).</li>
+<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE(3) matrix).</li>
 </ul>
 
 <h6 id="returns">Returns:</h6>
@@ -976,7 +976,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 <blockquote>
   <p>tuple:
       - bool: True if the pose is reachable.
-      - numpy.ndarray: Adjusted pose (4x4 SE3 matrix).
+      - numpy.ndarray: Adjusted pose (4x4 SE(3) matrix).
       - str: Status message ("Pose out of reach.", "Backward pose.", or "").</p>
 </blockquote>
 </div>
@@ -1000,7 +1000,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 </span><span id="Reachy2CLIK.inverse_kinematics-161"><a href="#Reachy2CLIK.inverse_kinematics-161"><span class="linenos">161</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the joints from IK using CLIK.</span>
 </span><span id="Reachy2CLIK.inverse_kinematics-162"><a href="#Reachy2CLIK.inverse_kinematics-162"><span class="linenos">162</span></a>
 </span><span id="Reachy2CLIK.inverse_kinematics-163"><a href="#Reachy2CLIK.inverse_kinematics-163"><span class="linenos">163</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK.inverse_kinematics-164"><a href="#Reachy2CLIK.inverse_kinematics-164"><span class="linenos">164</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK.inverse_kinematics-164"><a href="#Reachy2CLIK.inverse_kinematics-164"><span class="linenos">164</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK.inverse_kinematics-165"><a href="#Reachy2CLIK.inverse_kinematics-165"><span class="linenos">165</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="Reachy2CLIK.inverse_kinematics-166"><a href="#Reachy2CLIK.inverse_kinematics-166"><span class="linenos">166</span></a>
 </span><span id="Reachy2CLIK.inverse_kinematics-167"><a href="#Reachy2CLIK.inverse_kinematics-167"><span class="linenos">167</span></a><span class="sd">        Returns:</span>
@@ -1073,7 +1073,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 <h6 id="arguments">Arguments:</h6>
 
 <ul>
-<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE3 matrix).</li>
+<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE(3) matrix).</li>
 <li><strong>current_joints (numpy.ndarray):</strong>  Current joint configuration (rad).</li>
 </ul>
 
@@ -1106,7 +1106,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 </span><span id="Reachy2CLIK.compute_velocity-233"><a href="#Reachy2CLIK.compute_velocity-233"><span class="linenos">233</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute one velocity step for the CLIK.</span>
 </span><span id="Reachy2CLIK.compute_velocity-234"><a href="#Reachy2CLIK.compute_velocity-234"><span class="linenos">234</span></a>
 </span><span id="Reachy2CLIK.compute_velocity-235"><a href="#Reachy2CLIK.compute_velocity-235"><span class="linenos">235</span></a><span class="sd">        Args:</span>
-</span><span id="Reachy2CLIK.compute_velocity-236"><a href="#Reachy2CLIK.compute_velocity-236"><span class="linenos">236</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2CLIK.compute_velocity-236"><a href="#Reachy2CLIK.compute_velocity-236"><span class="linenos">236</span></a><span class="sd">            goal_pose (numpy.ndarray): Desired end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2CLIK.compute_velocity-237"><a href="#Reachy2CLIK.compute_velocity-237"><span class="linenos">237</span></a><span class="sd">            current_joints (numpy.ndarray): Current joint configuration (rad).</span>
 </span><span id="Reachy2CLIK.compute_velocity-238"><a href="#Reachy2CLIK.compute_velocity-238"><span class="linenos">238</span></a>
 </span><span id="Reachy2CLIK.compute_velocity-239"><a href="#Reachy2CLIK.compute_velocity-239"><span class="linenos">239</span></a><span class="sd">        Returns:</span>
@@ -1143,7 +1143,7 @@ If None, default joints for the chosen arm will be locked automatically.</li>
 <h6 id="arguments">Arguments:</h6>
 
 <ul>
-<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE3 matrix).</li>
+<li><strong>goal_pose (numpy.ndarray):</strong>  Desired end-effector pose (4x4 SE(3) matrix).</li>
 <li><strong>current_joints (numpy.ndarray):</strong>  Current joint configuration (rad).</li>
 </ul>
 

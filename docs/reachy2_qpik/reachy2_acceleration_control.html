@@ -22,7 +22,7 @@
   <path fill-rule="evenodd" d="M4.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H14.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
 </svg>                &nbsp;reachy2_qpik</a>
 
-<a href="https://www.pollen-robotics.com">            <img src="https://pollen-robotics.github.io/reachy2-sdk/pollen_logo.png" class="logo" alt="project logo"/>
+<a href="https://github.com/pollen-robotics/reachy2_qpik">            <img src="https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/POLLEN_LOGO.png?raw=true" class="logo" alt="project logo"/>
 </a>
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
@@ -270,7 +270,7 @@
 </span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;=</span> <span class="mf">0.2</span><span class="p">:</span>
 </span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>                <span class="c1"># freq = loop_count / (time.time() - start_time)</span>
 </span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>                <span class="c1"># print(f&quot;Frequency: {freq:.2f} Hz&quot;)</span>
-</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>                <span class="n">loop_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>                <span class="c1"># loop_count = 0</span>
 </span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>                <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 </span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>
 </span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">tick_control</span><span class="p">(</span>
@@ -286,7 +286,7 @@
 </span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a><span class="sd">            q_current (numpy.ndarray): Current joint positions [rad].</span>
 </span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a><span class="sd">            q_dot_current (numpy.ndarray): Current joint velocities [rad.s⁻¹].</span>
-</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>
 </span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a><span class="sd">        Returns:</span>
 </span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a><span class="sd">            numpy.ndarray: Computed joint accelerations [rad.s⁻²].</span>
@@ -308,7 +308,7 @@
 </span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>
 </span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a><span class="sd">        Args:</span>
 </span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
-</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span> <span class="o">=</span> <span class="n">pose</span>
@@ -320,7 +320,7 @@
 </span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a><span class="sd">            arm (str): Arm to query (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>
 </span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a><span class="sd">        Returns:</span>
-</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE(3) matrix) or None if no target is set.</span>
 </span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span>
@@ -493,7 +493,7 @@
 </span><span id="Reachy2AccelerationControl-164"><a href="#Reachy2AccelerationControl-164"><span class="linenos">164</span></a>            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;=</span> <span class="mf">0.2</span><span class="p">:</span>
 </span><span id="Reachy2AccelerationControl-165"><a href="#Reachy2AccelerationControl-165"><span class="linenos">165</span></a>                <span class="c1"># freq = loop_count / (time.time() - start_time)</span>
 </span><span id="Reachy2AccelerationControl-166"><a href="#Reachy2AccelerationControl-166"><span class="linenos">166</span></a>                <span class="c1"># print(f&quot;Frequency: {freq:.2f} Hz&quot;)</span>
-</span><span id="Reachy2AccelerationControl-167"><a href="#Reachy2AccelerationControl-167"><span class="linenos">167</span></a>                <span class="n">loop_count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="Reachy2AccelerationControl-167"><a href="#Reachy2AccelerationControl-167"><span class="linenos">167</span></a>                <span class="c1"># loop_count = 0</span>
 </span><span id="Reachy2AccelerationControl-168"><a href="#Reachy2AccelerationControl-168"><span class="linenos">168</span></a>                <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 </span><span id="Reachy2AccelerationControl-169"><a href="#Reachy2AccelerationControl-169"><span class="linenos">169</span></a>
 </span><span id="Reachy2AccelerationControl-170"><a href="#Reachy2AccelerationControl-170"><span class="linenos">170</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">tick_control</span><span class="p">(</span>
@@ -509,7 +509,7 @@
 </span><span id="Reachy2AccelerationControl-180"><a href="#Reachy2AccelerationControl-180"><span class="linenos">180</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="Reachy2AccelerationControl-181"><a href="#Reachy2AccelerationControl-181"><span class="linenos">181</span></a><span class="sd">            q_current (numpy.ndarray): Current joint positions [rad].</span>
 </span><span id="Reachy2AccelerationControl-182"><a href="#Reachy2AccelerationControl-182"><span class="linenos">182</span></a><span class="sd">            q_dot_current (numpy.ndarray): Current joint velocities [rad.s⁻¹].</span>
-</span><span id="Reachy2AccelerationControl-183"><a href="#Reachy2AccelerationControl-183"><span class="linenos">183</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2AccelerationControl-183"><a href="#Reachy2AccelerationControl-183"><span class="linenos">183</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2AccelerationControl-184"><a href="#Reachy2AccelerationControl-184"><span class="linenos">184</span></a>
 </span><span id="Reachy2AccelerationControl-185"><a href="#Reachy2AccelerationControl-185"><span class="linenos">185</span></a><span class="sd">        Returns:</span>
 </span><span id="Reachy2AccelerationControl-186"><a href="#Reachy2AccelerationControl-186"><span class="linenos">186</span></a><span class="sd">            numpy.ndarray: Computed joint accelerations [rad.s⁻²].</span>
@@ -531,7 +531,7 @@
 </span><span id="Reachy2AccelerationControl-202"><a href="#Reachy2AccelerationControl-202"><span class="linenos">202</span></a>
 </span><span id="Reachy2AccelerationControl-203"><a href="#Reachy2AccelerationControl-203"><span class="linenos">203</span></a><span class="sd">        Args:</span>
 </span><span id="Reachy2AccelerationControl-204"><a href="#Reachy2AccelerationControl-204"><span class="linenos">204</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
-</span><span id="Reachy2AccelerationControl-205"><a href="#Reachy2AccelerationControl-205"><span class="linenos">205</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2AccelerationControl-205"><a href="#Reachy2AccelerationControl-205"><span class="linenos">205</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2AccelerationControl-206"><a href="#Reachy2AccelerationControl-206"><span class="linenos">206</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2AccelerationControl-207"><a href="#Reachy2AccelerationControl-207"><span class="linenos">207</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="Reachy2AccelerationControl-208"><a href="#Reachy2AccelerationControl-208"><span class="linenos">208</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span> <span class="o">=</span> <span class="n">pose</span>
@@ -543,7 +543,7 @@
 </span><span id="Reachy2AccelerationControl-214"><a href="#Reachy2AccelerationControl-214"><span class="linenos">214</span></a><span class="sd">            arm (str): Arm to query (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="Reachy2AccelerationControl-215"><a href="#Reachy2AccelerationControl-215"><span class="linenos">215</span></a>
 </span><span id="Reachy2AccelerationControl-216"><a href="#Reachy2AccelerationControl-216"><span class="linenos">216</span></a><span class="sd">        Returns:</span>
-</span><span id="Reachy2AccelerationControl-217"><a href="#Reachy2AccelerationControl-217"><span class="linenos">217</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.</span>
+</span><span id="Reachy2AccelerationControl-217"><a href="#Reachy2AccelerationControl-217"><span class="linenos">217</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE(3) matrix) or None if no target is set.</span>
 </span><span id="Reachy2AccelerationControl-218"><a href="#Reachy2AccelerationControl-218"><span class="linenos">218</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2AccelerationControl-219"><a href="#Reachy2AccelerationControl-219"><span class="linenos">219</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="Reachy2AccelerationControl-220"><a href="#Reachy2AccelerationControl-220"><span class="linenos">220</span></a>            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span>
@@ -775,7 +775,7 @@ Defaults to 1/500 (500 Hz).</li>
 </span><span id="Reachy2AccelerationControl.tick_control-180"><a href="#Reachy2AccelerationControl.tick_control-180"><span class="linenos">180</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="Reachy2AccelerationControl.tick_control-181"><a href="#Reachy2AccelerationControl.tick_control-181"><span class="linenos">181</span></a><span class="sd">            q_current (numpy.ndarray): Current joint positions [rad].</span>
 </span><span id="Reachy2AccelerationControl.tick_control-182"><a href="#Reachy2AccelerationControl.tick_control-182"><span class="linenos">182</span></a><span class="sd">            q_dot_current (numpy.ndarray): Current joint velocities [rad.s⁻¹].</span>
-</span><span id="Reachy2AccelerationControl.tick_control-183"><a href="#Reachy2AccelerationControl.tick_control-183"><span class="linenos">183</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2AccelerationControl.tick_control-183"><a href="#Reachy2AccelerationControl.tick_control-183"><span class="linenos">183</span></a><span class="sd">            target_pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2AccelerationControl.tick_control-184"><a href="#Reachy2AccelerationControl.tick_control-184"><span class="linenos">184</span></a>
 </span><span id="Reachy2AccelerationControl.tick_control-185"><a href="#Reachy2AccelerationControl.tick_control-185"><span class="linenos">185</span></a><span class="sd">        Returns:</span>
 </span><span id="Reachy2AccelerationControl.tick_control-186"><a href="#Reachy2AccelerationControl.tick_control-186"><span class="linenos">186</span></a><span class="sd">            numpy.ndarray: Computed joint accelerations [rad.s⁻²].</span>
@@ -802,7 +802,7 @@ Defaults to 1/500 (500 Hz).</li>
 <li><strong>arm (str):</strong>  Arm to control ("l_arm" or "r_arm").</li>
 <li><strong>q_current (numpy.ndarray):</strong>  Current joint positions [rad].</li>
 <li><strong>q_dot_current (numpy.ndarray):</strong>  Current joint velocities [rad.s⁻¹].</li>
-<li><strong>target_pose (numpy.ndarray):</strong>  Target end-effector pose (4x4 SE3 matrix).</li>
+<li><strong>target_pose (numpy.ndarray):</strong>  Target end-effector pose (4x4 SE(3) matrix).</li>
 </ul>
 
 <h6 id="returns">Returns:</h6>
@@ -830,7 +830,7 @@ Defaults to 1/500 (500 Hz).</li>
 </span><span id="Reachy2AccelerationControl.set_current_goal-202"><a href="#Reachy2AccelerationControl.set_current_goal-202"><span class="linenos">202</span></a>
 </span><span id="Reachy2AccelerationControl.set_current_goal-203"><a href="#Reachy2AccelerationControl.set_current_goal-203"><span class="linenos">203</span></a><span class="sd">        Args:</span>
 </span><span id="Reachy2AccelerationControl.set_current_goal-204"><a href="#Reachy2AccelerationControl.set_current_goal-204"><span class="linenos">204</span></a><span class="sd">            arm (str): Arm to control (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
-</span><span id="Reachy2AccelerationControl.set_current_goal-205"><a href="#Reachy2AccelerationControl.set_current_goal-205"><span class="linenos">205</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE3 matrix).</span>
+</span><span id="Reachy2AccelerationControl.set_current_goal-205"><a href="#Reachy2AccelerationControl.set_current_goal-205"><span class="linenos">205</span></a><span class="sd">            pose (numpy.ndarray): Target end-effector pose (4x4 SE(3) matrix).</span>
 </span><span id="Reachy2AccelerationControl.set_current_goal-206"><a href="#Reachy2AccelerationControl.set_current_goal-206"><span class="linenos">206</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2AccelerationControl.set_current_goal-207"><a href="#Reachy2AccelerationControl.set_current_goal-207"><span class="linenos">207</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="Reachy2AccelerationControl.set_current_goal-208"><a href="#Reachy2AccelerationControl.set_current_goal-208"><span class="linenos">208</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span> <span class="o">=</span> <span class="n">pose</span>
@@ -843,7 +843,7 @@ Defaults to 1/500 (500 Hz).</li>
 
 <ul>
 <li><strong>arm (str):</strong>  Arm to control ("l_arm" or "r_arm").</li>
-<li><strong>pose (numpy.ndarray):</strong>  Target end-effector pose (4x4 SE3 matrix).</li>
+<li><strong>pose (numpy.ndarray):</strong>  Target end-effector pose (4x4 SE(3) matrix).</li>
 </ul>
 </div>
 
@@ -867,7 +867,7 @@ Defaults to 1/500 (500 Hz).</li>
 </span><span id="Reachy2AccelerationControl.get_current_goal-214"><a href="#Reachy2AccelerationControl.get_current_goal-214"><span class="linenos">214</span></a><span class="sd">            arm (str): Arm to query (&quot;l_arm&quot; or &quot;r_arm&quot;).</span>
 </span><span id="Reachy2AccelerationControl.get_current_goal-215"><a href="#Reachy2AccelerationControl.get_current_goal-215"><span class="linenos">215</span></a>
 </span><span id="Reachy2AccelerationControl.get_current_goal-216"><a href="#Reachy2AccelerationControl.get_current_goal-216"><span class="linenos">216</span></a><span class="sd">        Returns:</span>
-</span><span id="Reachy2AccelerationControl.get_current_goal-217"><a href="#Reachy2AccelerationControl.get_current_goal-217"><span class="linenos">217</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.</span>
+</span><span id="Reachy2AccelerationControl.get_current_goal-217"><a href="#Reachy2AccelerationControl.get_current_goal-217"><span class="linenos">217</span></a><span class="sd">            numpy.ndarray | None: Current target pose (4x4 SE(3) matrix) or None if no target is set.</span>
 </span><span id="Reachy2AccelerationControl.get_current_goal-218"><a href="#Reachy2AccelerationControl.get_current_goal-218"><span class="linenos">218</span></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="Reachy2AccelerationControl.get_current_goal-219"><a href="#Reachy2AccelerationControl.get_current_goal-219"><span class="linenos">219</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
 </span><span id="Reachy2AccelerationControl.get_current_goal-220"><a href="#Reachy2AccelerationControl.get_current_goal-220"><span class="linenos">220</span></a>            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_pose</span><span class="p">[</span><span class="n">arm</span><span class="p">]</span>
@@ -887,7 +887,7 @@ Defaults to 1/500 (500 Hz).</li>
 <h6 id="returns">Returns:</h6>
 
 <blockquote>
-  <p>numpy.ndarray | None: Current target pose (4x4 SE3 matrix) or None if no target is set.</p>
+  <p>numpy.ndarray | None: Current target pose (4x4 SE(3) matrix) or None if no target is set.</p>
 </blockquote>
 </div>
 

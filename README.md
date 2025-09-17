@@ -22,7 +22,7 @@ A kinematics library for Reachy2 7 DoF arms, using quadratic programming for pre
 | [Installation](#installation)           | How to install dependencies and the package          |
 | [Usage](#usage)                         | How to import and use the package                    |
 | [Unit tests](#unit-tests)               | How to run online unit tests                         |
-| [URDF](#urdf)                           | Location of the robot description file (URDF)        |
+| [Documentation & URDF file](#documentation--urdf-file)                           | Package documentation & Location of the robot description file (URDF)        |
 | [Contribution](#contribution)           | How to contribute to the repository                  |
 | [License](#license)                     | Licensing information                                |
 
@@ -96,9 +96,15 @@ or:
 python3 -m pytest -m online
 ```
 
-## URDF
+## Documentation & URDF file
 
-A URDF file is provided in ['src/config_files/reachy.urdf'](./src/config_files/reachy.urdf).
+ The package documentation can be generated locally with pdoc:
+
+```bash
+pdoc reachy2_qpik   --output-dir docs   --logo "https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/POLLEN_LOGO.png?raw=true"   --logo-link "https://github.com/pollen-robotics/reachy2_qpik"   --docformat google
+```
+
+An URDF file is provided in ['src/config_files/reachy.urdf'](./src/config_files/reachy.urdf).
 
 ## Contribution
 
