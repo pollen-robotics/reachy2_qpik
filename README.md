@@ -1,6 +1,6 @@
 # Reachy2 quadratic programming inverse kinematics
 
-A kinematics library for Reachy2 7 DoF arms, using quadratic programming for precise and robust motion control.
+A kinematics library for Reachy2 7 DoF arms, using quadratic programming (QP) for precise and robust motion control.
 
 [![Licence](https://img.shields.io/badge/licence-Apache%202.0-blue)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -74,7 +74,7 @@ IK_MODE = IKMode.ACCELERATION_QP
 Available options are:
 
 * Symbolic IK ([repository](https://github.com/pollen-robotics/reachy2_symbolic_ik))
-* CLIK
+* Closed Loop Inverse Kinematics (CLIK)
 * Speed QP
 * Acceleration QP
 
