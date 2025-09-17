@@ -181,7 +181,7 @@ if __name__ == "__main__":
     if reachy._grpc_status == "disconnected":
         print("Failed to connect to Reachy, exiting...")
         exit()
-    
+
     reachy.turn_on()
     time.sleep(0.5)
 
