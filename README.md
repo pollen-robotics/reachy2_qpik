@@ -98,7 +98,11 @@ python3 -m pytest -m online
 
 ## Documentation & URDF file
 
- The package documentation can be generated locally with pdoc:
+For more technical details, the report and presentation of the project are available in the ['docs/report'](https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/report) folder.
+
+The package documentation is available locally by opening the ['docs/reachy2_qpik.html'](https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/reachy2_qpik/reachy2_qpik.html) file.
+
+ It can be regenerated with pdoc:
 
 ```bash
 pdoc reachy2_qpik   --output-dir docs   --logo "https://github.com/pollen-robotics/reachy2_qpik/blob/develop/docs/POLLEN_LOGO.png?raw=true"   --logo-link "https://github.com/pollen-robotics/reachy2_qpik"   --docformat google
